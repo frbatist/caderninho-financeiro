@@ -19,10 +19,12 @@ namespace CaderninhoFinanceiro.Infra.Data.Repositories.Common
             DbSet.Add(entity);
         }
 
-        public Task Delete(TKey id)
+        public async Task Delete(TKey id)
         {
             if (id == null) throw new ArgumentNullException("id");
-            return DbSet.Where(d => d.Id.Equals(id)).ExecuteDeleteAsync();
+
+            var entity = await DbSet.FindAsync(id);
+            DbSet.Remove(entity);
         }
 
         public void Delete(TEntity entity)
@@ -30,7 +32,7 @@ namespace CaderninhoFinanceiro.Infra.Data.Repositories.Common
             DbSet.Remove(entity);
         }
 
-        public ValueTask<TEntity?> GetByIdAsync(TKey id)
+        public ValueTask<TEntity?> GetById(TKey id)
         {
             return DbSet.FindAsync(id);
         }

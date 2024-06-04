@@ -12,6 +12,6 @@ namespace CaderninhoFinanceiro.Domain.Repositories.Common
         void Add(TEntity entity);
         Task Delete(TKey id);
         void Delete(TEntity entity);
-        ValueTask<TEntity?> GetByIdAsync(TKey id);
+        ValueTask<TEntity?> GetById(TKey id);
     }
 }
