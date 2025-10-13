@@ -22,7 +22,7 @@ Este � um sistema financeiro desenvolvido em .NET 9 com arquitetura limpa (Cle
   - **Entities**: Entidades de dom�nio (ex: `User`, `Transaction`, `Account`)
   - **ValueObjects**: Objetos de valor (ex: `Money`, `Email`)
   - **Interfaces**: Contratos do dom�nio (ex: `IUserRepository`)
-  - **Enums**: Enumera��es de dom�nio (ex: `TransactionType`, `AccountStatus`)
+  - **Enums**: Enumera��es de dom�nio (ex: `PaymentType`, `TransactionType`, `AccountStatus`)
   - **DTOs**: Data Transfer Objects
   - **Exceptions**: Exce��es espec�ficas do dom�nio
   - **Events**: Eventos de dom�nio
