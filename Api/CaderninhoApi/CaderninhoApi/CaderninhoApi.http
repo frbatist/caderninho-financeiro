@@ -1,0 +1,6 @@
+@CaderninhoApi_HostAddress = http://localhost:5054
+
+GET {{CaderninhoApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
