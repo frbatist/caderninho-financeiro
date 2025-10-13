@@ -1,71 +1,80 @@
-# Instruções de IA - Caderninho Financeiro
+# Instruï¿½ï¿½es de IA - Caderninho Financeiro
 
-## Visão Geral do Projeto
-Este é um sistema financeiro desenvolvido em .NET 9 com arquitetura limpa (Clean Architecture). O projeto segue os princípios de Domain-Driven Design (DDD) e tem como objetivo fornecer uma API robusta para gerenciamento financeiro pessoal.
+## Visï¿½o Geral do Projeto
+Este ï¿½ um sistema financeiro desenvolvido em .NET 9 com arquitetura limpa (Clean Architecture). O projeto segue os princï¿½pios de Domain-Driven Design (DDD) e tem como objetivo fornecer uma API robusta para gerenciamento financeiro pessoal.
 
-## Estrutura de Diretórios
+## Estrutura de Diretï¿½rios
 
-### 1. Application (Camada de Aplicação)
-- **Localização**: `/Application/`
-- **Responsabilidade**: Serviços de aplicação, casos de uso, handlers de comandos/queries
-- **Conteúdo**:
+### 1. Application (Camada de Aplicaï¿½ï¿½o)
+- **Localizaï¿½ï¿½o**: `/Application/`
+- **Responsabilidade**: Serviï¿½os de aplicaï¿½ï¿½o, casos de uso, handlers de comandos/queries
+- **Conteï¿½do**:
   - Services (ex: `IUserService`, `TransactionService`)
   - Commands/Queries (CQRS pattern)
   - Handlers
-  - DTOs de aplicação
-  - Interfaces de serviços
+  - DTOs de aplicaï¿½ï¿½o
+  - Interfaces de serviï¿½os
 
-### 2. Domain (Camada de Domínio)
-- **Localização**: `/Domain/`
-- **Responsabilidade**: Entidades de negócio, regras de domínio, interfaces
-- **Conteúdo**:
-  - **Entities**: Entidades de domínio (ex: `User`, `Transaction`, `Account`)
+### 2. Domain (Camada de Domï¿½nio)
+- **Localizaï¿½ï¿½o**: `/Domain/`
+- **Responsabilidade**: Entidades de negï¿½cio, regras de domï¿½nio, interfaces
+- **Conteï¿½do**:
+  - **Entities**: Entidades de domï¿½nio (ex: `User`, `Transaction`, `Account`)
   - **ValueObjects**: Objetos de valor (ex: `Money`, `Email`)
-  - **Interfaces**: Contratos do domínio (ex: `IUserRepository`)
-  - **Enums**: Enumerações de domínio (ex: `TransactionType`, `AccountStatus`)
+  - **Interfaces**: Contratos do domï¿½nio (ex: `IUserRepository`)
+  - **Enums**: Enumeraï¿½ï¿½es de domï¿½nio (ex: `TransactionType`, `AccountStatus`)
   - **DTOs**: Data Transfer Objects
-  - **Exceptions**: Exceções específicas do domínio
-  - **Events**: Eventos de domínio
+  - **Exceptions**: Exceï¿½ï¿½es especï¿½ficas do domï¿½nio
+  - **Events**: Eventos de domï¿½nio
 
 ### 3. Infrastructure (Camada de Infraestrutura)
-- **Localização**: `/Infrastructure/`
-- **Responsabilidade**: Implementações de acesso a dados, integrações externas
-- **Conteúdo**:
-  - **Data**: Contexto do Entity Framework, configurações
-  - **Repositories**: Implementações dos repositórios
-  - **Mappings**: Configurações do Entity Framework (Fluent API)
-  - **External**: Integrações com APIs externas
-  - **Migrations**: Migrações do banco de dados
+- **Localizaï¿½ï¿½o**: `/Infrastructure/`
+- **Responsabilidade**: Implementaï¿½ï¿½es de acesso a dados, integraï¿½ï¿½es externas
+- **Conteï¿½do**:
+  - **Data**: Contexto do Entity Framework, configuraï¿½ï¿½es
+  - **Repositories**: Implementaï¿½ï¿½es dos repositï¿½rios
+  - **Mappings**: Configuraï¿½ï¿½es do Entity Framework (Fluent API)
+  - **External**: Integraï¿½ï¿½es com APIs externas
+  - **Migrations**: Migraï¿½ï¿½es do banco de dados
 
-## Padrões e Convenções
+## Padrï¿½es e Convenï¿½ï¿½es
 
 ### Arquitetura
-- **Clean Architecture**: Separação clara de responsabilidades
-- **CQRS**: Separação entre comandos (write) e queries (read)
-- **Repository Pattern**: Abstração do acesso a dados
-- **Unit of Work**: Gerenciamento de transações
+- **Clean Architecture**: Separaï¿½ï¿½o clara de responsabilidades
+- **CQRS**: Separaï¿½ï¿½o entre comandos (write) e queries (read)
+- **Repository Pattern**: Abstraï¿½ï¿½o do acesso a dados
+- **Unit of Work**: Gerenciamento de transaï¿½ï¿½es
 
 ### Nomenclatura
 - **Classes**: PascalCase (ex: `UserService`, `TransactionRepository`)
-- **Métodos**: PascalCase (ex: `GetUserById`, `CreateTransaction`)
+- **Mï¿½todos**: PascalCase (ex: `GetUserById`, `CreateTransaction`)
 - **Propriedades**: PascalCase (ex: `UserId`, `Amount`)
-- **Parâmetros**: camelCase (ex: `userId`, `transactionAmount`)
+- **Parï¿½metros**: camelCase (ex: `userId`, `transactionAmount`)
 - **Constantes**: UPPER_CASE (ex: `MAX_TRANSACTION_AMOUNT`)
+
+### Idioma e Localizaï¿½ï¿½o
+- **Cï¿½digo**: Todo em inglï¿½s (classes, mï¿½todos, propriedades, variï¿½veis)
+- **Interface do Usuï¿½rio**: Todo em portuguï¿½s (mensagens, labels, display names)
+- **Exemplos**:
+  - Usar `[Display(Name = "Nome do Usuï¿½rio")]` para propriedades
+  - Mensagens de erro em portuguï¿½s: "Usuï¿½rio nï¿½o encontrado"
+  - Enums com `[Display(Name = "Descriï¿½ï¿½o em Portuguï¿½s")]`
+  - Documentaï¿½ï¿½o XML em portuguï¿½s para mï¿½todos pï¿½blicos
 
 ### Entity Framework
 - **Context**: Usar `ApplicationDbContext`
-- **Configurações**: Usar Fluent API em arquivos separados na pasta `Mappings`
-- **Convenções**: 
-  - Entidades devem ter propriedade `Id` do tipo `Guid`
+- **Configuraï¿½ï¿½es**: Usar Fluent API em arquivos separados na pasta `Mappings`
+- **Convenï¿½ï¿½es**: 
+  - **Primary Keys**: Usar `int` como padrï¿½o para propriedade `Id` (exceto User que mantï¿½m `Guid`)
   - Usar `CreatedAt` e `UpdatedAt` para auditoria
   - Soft delete com propriedade `IsDeleted`
 
 ## Testes
 
 ### Estrutura de Testes
-- **Padrão AAA**: Arrange, Act, Assert
-- **Mocking**: NSubstitute para criação de mocks
-- **Assertions**: FluentAssertions para validações
+- **Padrï¿½o AAA**: Arrange, Act, Assert
+- **Mocking**: NSubstitute para criaï¿½ï¿½o de mocks
+- **Assertions**: FluentAssertions para validaï¿½ï¿½es
 
 ### Exemplo de Teste
 ```csharp
@@ -75,7 +84,7 @@ public async Task CreateUser_WithValidData_ShouldReturnSuccess()
     // Arrange
     var userRepository = Substitute.For<IUserRepository>();
     var userService = new UserService(userRepository);
-    var createUserDto = new CreateUserDto { Name = "João Silva", Email = "joao@email.com" };
+    var createUserDto = new CreateUserDto { Name = "Joï¿½o Silva", Email = "joao@email.com" };
 
     // Act
     var result = await userService.CreateUserAsync(createUserDto);
@@ -87,67 +96,67 @@ public async Task CreateUser_WithValidData_ShouldReturnSuccess()
 }
 ```
 
-### Convenções de Testes
+### Convenï¿½ï¿½es de Testes
 - **Nomenclatura**: `MethodName_Scenario_ExpectedResult`
 - **Estrutura**: Uma classe de teste por classe testada
-- **Organização**: Agrupar testes relacionados em nested classes quando apropriado
+- **Organizaï¿½ï¿½o**: Agrupar testes relacionados em nested classes quando apropriado
 
-## Dependências e Bibliotecas
+## Dependï¿½ncias e Bibliotecas
 
-### Produção
+### Produï¿½ï¿½o
 - **Entity Framework Core**: ORM para acesso a dados
 - **AutoMapper**: Mapeamento entre objetos
-- **FluentValidation**: Validação de entrada
-- **MediatR**: Implementação de mediator pattern
+- **FluentValidation**: Validaï¿½ï¿½o de entrada
+- **MediatR**: Implementaï¿½ï¿½o de mediator pattern
 - **Serilog**: Logging estruturado
 
 ### Testes
 - **NUnit**: Framework de testes
 - **NSubstitute**: Framework de mocking
 - **FluentAssertions**: Biblioteca de assertions
-- **Microsoft.EntityFrameworkCore.InMemory**: Banco em memória para testes
+- **Microsoft.EntityFrameworkCore.InMemory**: Banco em memï¿½ria para testes
 
-## Regras de Negócio
+## Regras de Negï¿½cio
 
-### Validações
+### Validaï¿½ï¿½es
 - Sempre validar entrada de dados usando FluentValidation
-- Implementar validações de domínio nas entidades
-- Usar Result Pattern para retorno de operações
+- Implementar validaï¿½ï¿½es de domï¿½nio nas entidades
+- Usar Result Pattern para retorno de operaï¿½ï¿½es
 
-### Exceções
-- Criar exceções específicas do domínio
-- Usar middleware para tratamento global de exceções
-- Logar todas as exceções com contexto adequado
+### Exceï¿½ï¿½es
+- Criar exceï¿½ï¿½es especï¿½ficas do domï¿½nio
+- Usar middleware para tratamento global de exceï¿½ï¿½es
+- Logar todas as exceï¿½ï¿½es com contexto adequado
 
-### Segurança
-- Implementar autenticação JWT
-- Validar autorização em todos os endpoints
-- Sanitizar todas as entradas de usuário
+### Seguranï¿½a
+- Implementar autenticaï¿½ï¿½o JWT
+- Validar autorizaï¿½ï¿½o em todos os endpoints
+- Sanitizar todas as entradas de usuï¿½rio
 
-## Estilo de Código
+## Estilo de Cï¿½digo
 
-### Formatação
-- Usar 4 espaços para indentação
-- Quebra de linha após 120 caracteres
-- Usar `var` quando o tipo for óbvio
+### Formataï¿½ï¿½o
+- Usar 4 espaï¿½os para indentaï¿½ï¿½o
+- Quebra de linha apï¿½s 120 caracteres
+- Usar `var` quando o tipo for ï¿½bvio
 - Sempre usar chaves `{}` mesmo para blocos de uma linha
 
-### Comentários
-- Documentar métodos públicos com XML comments
-- Evitar comentários óbvios
-- Explicar o "porquê", não o "como"
+### Comentï¿½rios
+- Documentar mï¿½todos pï¿½blicos com XML comments
+- Evitar comentï¿½rios ï¿½bvios
+- Explicar o "porquï¿½", nï¿½o o "como"
 
-## Comandos Úteis
+## Comandos ï¿½teis
 
 ### Entity Framework
 ```bash
-# Adicionar migração
+# Adicionar migraï¿½ï¿½o
 dotnet ef migrations add NomeDaMigracao
 
 # Atualizar banco
 dotnet ef database update
 
-# Remover última migração
+# Remover ï¿½ltima migraï¿½ï¿½o
 dotnet ef migrations remove
 ```
 
@@ -160,13 +169,27 @@ dotnet test
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
-## Próximos Passos
-- Implementar autenticação e autorização
+## Instruï¿½ï¿½es para IA
+
+### Restriï¿½ï¿½es de Execuï¿½ï¿½o
+- **Nï¿½O EXECUTAR**: Nï¿½o execute migrations, projeto ou testes diretamente
+- **Nï¿½O RODAR**: Nï¿½o use comandos `dotnet ef database update`, `dotnet run`, `dotnet test`
+- **APENAS FORNECER**: Apenas forneï¿½a os comandos necessï¿½rios para que o desenvolvedor execute manualmente
+- **EXPLICAR**: Sempre explique o que cada comando faz e quando deve ser executado
+
+### Quando Sugerir Comandos
+- Apï¿½s criar/modificar entidades: Sugerir comando de migration
+- Apï¿½s modificar DbContext ou configuraï¿½ï¿½es: Sugerir atualizaï¿½ï¿½o do banco
+- Apï¿½s implementar novos recursos: Sugerir execuï¿½ï¿½o de testes
+- Apï¿½s modificaï¿½ï¿½es no cï¿½digo: Sugerir build do projeto
+
+## Prï¿½ximos Passos
+- Implementar autenticaï¿½ï¿½o e autorizaï¿½ï¿½o
 - Configurar CI/CD pipeline
-- Adicionar documentação da API (Swagger)
+- Adicionar documentaï¿½ï¿½o da API (Swagger)
 - Implementar logging e monitoramento
-- Configurar Docker para containerização
+- Configurar Docker para containerizaï¿½ï¿½o
 
 ---
 
-**Nota**: Este documento deve ser atualizado conforme o projeto evolui. Sempre mantenha as instruções alinhadas com as práticas atuais do time.
+**Nota**: Este documento deve ser atualizado conforme o projeto evolui. Sempre mantenha as instruï¿½ï¿½es alinhadas com as prï¿½ticas atuais do time.
