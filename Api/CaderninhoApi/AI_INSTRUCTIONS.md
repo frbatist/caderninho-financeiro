@@ -178,12 +178,119 @@ dotnet test --collect:"XPlat Code Coverage"
 - **EXPLICAR**: Sempre explique o que cada comando faz e quando deve ser executado
 
 ### Quando Sugerir Comandos
-- Ap�s criar/modificar entidades: Sugerir comando de migration
-- Ap�s modificar DbContext ou configura��es: Sugerir atualiza��o do banco
-- Ap�s implementar novos recursos: Sugerir execu��o de testes
-- Ap�s modifica��es no c�digo: Sugerir build do projeto
+- Após criar/modificar entidades: Sugerir comando de migration
+- Após modificar DbContext ou configurações: Sugerir atualização do banco
+- Após implementar novos recursos: Sugerir execução de testes
+- Após modificações no código: Sugerir build do projeto
 
-## Pr�ximos Passos
+## Padrão de APIs
+
+### Estrutura de Endpoints
+Ao criar novos endpoints REST, seguir o seguinte padrão:
+
+#### 1. **DTOs** (`Domain/DTOs/`)
+- Criar DTOs específicos para operações (ex: `CreateEntityDto`, `UpdateEntityDto`)
+- Usar Data Annotations para validação
+- Mensagens de validação em português
+- Exemplo:
+```csharp
+public class CreateEntityDto
+{
+    [Required(ErrorMessage = "O campo é obrigatório")]
+    [MaxLength(100, ErrorMessage = "Máximo de 100 caracteres")]
+    [Display(Name = "Nome em Português")]
+    public string Name { get; set; } = string.Empty;
+}
+```
+
+#### 2. **Filter Requests** (`Request/`)
+- Criar objetos de filtro para endpoints GET com paginação
+- Propriedades padrão: `PageNumber`, `PageSize`, `SearchText`
+- Exemplo: `EntityFilterRequest`
+
+#### 3. **Paged Response** (`Request/PagedResponse.cs`)
+- Usar a classe genérica `PagedResponse<T>` para respostas paginadas
+- Contém: `Items`, `PageNumber`, `PageSize`, `TotalItems`, `TotalPages`, `HasPreviousPage`, `HasNextPage`
+
+#### 4. **Service Interface** (`Domain/Abstractions/ApplicationServices/`)
+- Definir interface para operações de negócio
+- Exemplo: `IEntityService`
+
+#### 5. **Service Implementation** (`Application/Services/`)
+- Implementar a interface
+- Injetar `ApplicationDbContext` e `ILogger`
+- Fazer log de operações importantes
+- Exemplo: `EntityService`
+
+#### 6. **Controller** (`Controllers/`)
+- Injetar `ApplicationDbContext` (para queries) e `IEntityService` (para comandos)
+- Endpoints padrão:
+  - **GET /api/entities** - Lista paginada com filtro
+  - **GET /api/entities/{id}** - Busca por ID
+  - **POST /api/entities** - Criação
+  - **PUT /api/entities/{id}** - Atualização (quando necessário)
+  - **DELETE /api/entities/{id}** - Exclusão lógica (quando necessário)
+
+#### 7. **Registro de Serviços** (`Program.cs`)
+- Registrar serviços com `AddScoped<IEntityService, EntityService>()`
+
+### Exemplo Completo de Implementação
+```csharp
+// 1. DTO
+public class CreateCardDto
+{
+    [Required(ErrorMessage = "O nome é obrigatório")]
+    [Display(Name = "Nome do Cartão")]
+    public string Name { get; set; } = string.Empty;
+}
+
+// 2. Interface
+public interface ICardService
+{
+    Task<Card> AddAsync(CreateCardDto dto);
+}
+
+// 3. Service
+public class CardService : ICardService
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<CardService> _logger;
+    
+    public async Task<Card> AddAsync(CreateCardDto dto)
+    {
+        var card = new Card { Name = dto.Name };
+        _context.Cards.Add(card);
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Cartão criado: {CardId}", card.Id);
+        return card;
+    }
+}
+
+// 4. Controller
+[ApiController]
+[Route("api/[controller]")]
+public class CardsController : ControllerBase
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ICardService _cardService;
+    
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<Card>>> GetAll([FromQuery] CardFilterRequest filter)
+    {
+        // Implementação com paginação
+    }
+    
+    [HttpPost]
+    public async Task<ActionResult<Card>> Create([FromBody] CreateCardDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var card = await _cardService.AddAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = card.Id }, card);
+    }
+}
+```
+
+## Próximos Passos
 - Implementar autentica��o e autoriza��o
 - Configurar CI/CD pipeline
 - Adicionar documenta��o da API (Swagger)
