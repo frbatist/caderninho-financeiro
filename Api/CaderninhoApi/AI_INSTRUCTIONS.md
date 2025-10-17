@@ -78,21 +78,22 @@ Este � um sistema financeiro desenvolvido em .NET 9 com arquitetura limpa (Cle
 
 ### Exemplo de Teste
 ```csharp
-[Test]
+[Fact]
 public async Task CreateUser_WithValidData_ShouldReturnSuccess()
 {
     // Arrange
-    var userRepository = Substitute.For<IUserRepository>();
-    var userService = new UserService(userRepository);
-    var createUserDto = new CreateUserDto { Name = "Jo�o Silva", Email = "joao@email.com" };
+    var context = CreateInMemoryContext();
+    var logger = Substitute.For<ILogger<UserService>>();
+    var userService = new UserService(context, logger);
+    var createUserDto = new CreateUserDto { Name = "João Silva", Email = "joao@email.com" };
 
     // Act
     var result = await userService.CreateUserAsync(createUserDto);
 
     // Assert
     result.Should().NotBeNull();
-    result.IsSuccess.Should().BeTrue();
-    await userRepository.Received(1).AddAsync(Arg.Any<User>());
+    result.Id.Should().BeGreaterThan(0);
+    result.Name.Should().Be("João Silva");
 }
 ```
 
@@ -114,7 +115,9 @@ public async Task CreateUser_WithValidData_ShouldReturnSuccess()
 - **NUnit**: Framework de testes
 - **NSubstitute**: Framework de mocking
 - **FluentAssertions**: Biblioteca de assertions
-- **Microsoft.EntityFrameworkCore.InMemory**: Banco em mem�ria para testes
+- **Microsoft.EntityFrameworkCore.InMemory**: Banco em memória para testes
+
+**Nota**: O projeto usa **xUnit** como framework de testes.
 
 ## Regras de Neg�cio
 
