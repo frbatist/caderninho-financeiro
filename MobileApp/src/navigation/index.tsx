@@ -10,6 +10,7 @@ import { RootStackParamList } from './types';
 
 // Import das telas (vamos criar a seguir)
 import HomeScreen from '../screens/HomeScreen';
+import ExpensesScreen from '../screens/ExpensesScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -32,6 +33,11 @@ export default function Navigation() {
           name="Home" 
           component={HomeScreen}
           options={{ title: 'Caderninho Financeiro' }}
+        />
+        <Stack.Screen 
+          name="Expenses" 
+          component={ExpensesScreen}
+          options={{ title: 'Despesas' }}
         />
         {/* Adicione mais telas aqui conforme desenvolver */}
       </Stack.Navigator>

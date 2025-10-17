@@ -41,6 +41,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         {/* Menu de navegação */}
         <View style={styles.menuGrid}>
           <MenuButton
+            title="Despesas"
+            icon="💳"
+            onPress={() => navigation.navigate('Expenses')}
+          />
+          <MenuButton
             title="Transações"
             icon="💰"
             onPress={() => navigation.navigate('Transactions')}
@@ -52,7 +57,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           />
           <MenuButton
             title="Cartões"
-            icon="💳"
+            icon="🃏"
             onPress={() => navigation.navigate('Cards')}
           />
           <MenuButton
