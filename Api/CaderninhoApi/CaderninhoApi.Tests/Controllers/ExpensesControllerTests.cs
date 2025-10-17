@@ -798,4 +798,153 @@ public class ExpensesControllerTests
         response.Items.Should().Contain(e => e.InstallmentCount == 3 && e.Amount == 900m);
         response.Items.Should().Contain(e => e.InstallmentCount == 12 && e.Amount == 1200m);
     }
+
+    [Fact]
+    public async Task Delete_WithValidId_ShouldReturnNoContent()
+    {
+        // Arrange
+        await using var context = CreateInMemoryContext();
+        var (establishment, card) = await SeedRequiredData(context);
+        
+        var expense = new Expense
+        {
+            Description = "Despesa para deletar",
+            EstablishmentId = establishment.Id,
+            PaymentType = PaymentType.CreditCard,
+            CardId = card.Id,
+            Amount = 100m,
+            InstallmentCount = 1
+        };
+        context.Expenses.Add(expense);
+        await context.SaveChangesAsync();
+
+        var service = Substitute.For<IExpenseService>();
+        var logger = Substitute.For<ILogger<ExpensesController>>();
+        var controller = new ExpensesController(context, service, logger);
+
+        // Act
+        var result = await controller.Delete(expense.Id);
+
+        // Assert
+        result.Should().BeOfType<NoContentResult>();
+        
+        // Verificar se a despesa foi removida do banco
+        var deletedExpense = await context.Expenses.FindAsync(expense.Id);
+        deletedExpense.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Delete_WithInvalidId_ShouldReturnNotFound()
+    {
+        // Arrange
+        await using var context = CreateInMemoryContext();
+        var service = Substitute.For<IExpenseService>();
+        var logger = Substitute.For<ILogger<ExpensesController>>();
+        var controller = new ExpensesController(context, service, logger);
+
+        // Act
+        var result = await controller.Delete(999);
+
+        // Assert
+        var notFoundResult = result.Should().BeOfType<NotFoundObjectResult>().Subject;
+        notFoundResult.Value.Should().Be("Despesa não encontrada");
+    }
+
+    [Fact]
+    public async Task Delete_WhenDatabaseThrowsException_ShouldReturnInternalServerError()
+    {
+        // Arrange
+        await using var context = CreateInMemoryContext();
+        var (establishment, card) = await SeedRequiredData(context);
+        
+        var expense = new Expense
+        {
+            Description = "Despesa teste",
+            EstablishmentId = establishment.Id,
+            PaymentType = PaymentType.CreditCard,
+            CardId = card.Id,
+            Amount = 100m,
+            InstallmentCount = 1
+        };
+        context.Expenses.Add(expense);
+        await context.SaveChangesAsync();
+
+        // Simular erro do banco de dados dispondo o contexto antes da operação
+        await context.DisposeAsync();
+
+        var service = Substitute.For<IExpenseService>();
+        var logger = Substitute.For<ILogger<ExpensesController>>();
+        var controller = new ExpensesController(context, service, logger);
+
+        // Act
+        var result = await controller.Delete(expense.Id);
+
+        // Assert
+        var statusCodeResult = result.Should().BeOfType<ObjectResult>().Subject;
+        statusCodeResult.StatusCode.Should().Be(500);
+        statusCodeResult.Value.Should().Be("Erro interno do servidor");
+    }
+
+    [Fact]
+    public async Task Delete_ShouldLogInformationWhenSuccessful()
+    {
+        // Arrange
+        await using var context = CreateInMemoryContext();
+        var (establishment, card) = await SeedRequiredData(context);
+        
+        var expense = new Expense
+        {
+            Description = "Despesa para testar log",
+            EstablishmentId = establishment.Id,
+            PaymentType = PaymentType.CreditCard,
+            CardId = card.Id,
+            Amount = 150m,
+            InstallmentCount = 1
+        };
+        context.Expenses.Add(expense);
+        await context.SaveChangesAsync();
+
+        var service = Substitute.For<IExpenseService>();
+        var logger = Substitute.For<ILogger<ExpensesController>>();
+        var controller = new ExpensesController(context, service, logger);
+
+        // Act
+        await controller.Delete(expense.Id);
+
+        // Assert
+        logger.Received(1).LogInformation("Despesa deletada: {ExpenseId}", expense.Id);
+    }
+
+    [Fact]
+    public async Task Delete_ShouldLogErrorWhenExceptionOccurs()
+    {
+        // Arrange
+        await using var context = CreateInMemoryContext();
+        var (establishment, card) = await SeedRequiredData(context);
+        
+        var expense = new Expense
+        {
+            Description = "Despesa teste erro",
+            EstablishmentId = establishment.Id,
+            PaymentType = PaymentType.CreditCard,
+            CardId = card.Id,
+            Amount = 100m,
+            InstallmentCount = 1
+        };
+        context.Expenses.Add(expense);
+        await context.SaveChangesAsync();
+
+        // Simular erro dispondo o contexto
+        await context.DisposeAsync();
+
+        var service = Substitute.For<IExpenseService>();
+        var logger = Substitute.For<ILogger<ExpensesController>>();
+        var controller = new ExpensesController(context, service, logger);
+
+        // Act
+        await controller.Delete(expense.Id);
+
+        // Assert
+        logger.Received(1).LogError(Arg.Any<Exception>(), "Erro ao deletar despesa {ExpenseId}", expense.Id);
+    }
 }

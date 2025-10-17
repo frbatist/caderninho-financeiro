@@ -153,4 +153,35 @@ public class ExpensesController : ControllerBase
             return StatusCode(500, "Erro interno do servidor");
         }
     }
+
+    /// <summary>
+    /// Deleta uma despesa por ID
+    /// </summary>
+    /// <param name="id">ID da despesa</param>
+    /// <returns>Resultado da operação</returns>
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        try
+        {
+            var expense = await _context.Expenses
+                .FirstOrDefaultAsync(e => e.Id == id);
+
+            if (expense == null)
+            {
+                return NotFound("Despesa não encontrada");
+            }
+
+            _context.Expenses.Remove(expense);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Despesa deletada: {ExpenseId}", id);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao deletar despesa {ExpenseId}", id);
+            return StatusCode(500, "Erro interno do servidor");
+        }
+    }
 }
