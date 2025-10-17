@@ -14,6 +14,7 @@ builder.Services.AddOpenApi();
 // Registrar serviços da aplicação
 builder.Services.AddScoped<IEstablishmentService, EstablishmentService>();
 builder.Services.AddScoped<ICardService, CardService>();
+builder.Services.AddScoped<IExpenseService, ExpenseService>();
 
 // Configuração do Entity Framework com SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
