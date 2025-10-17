@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using CaderninhoApi.Infrastructure.Data;
+using CaderninhoApi.Domain.Abstractions.ApplicationServices;
+using CaderninhoApi.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +11,10 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Configuração do Entity Framework com SQLite
+// Registrar serviÃ§os da aplicaÃ§Ã£o
+builder.Services.AddScoped<IEstablishmentService, EstablishmentService>();
+
+// ConfiguraÃ§Ã£o do Entity Framework com SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
@@ -17,7 +22,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     
     options.UseSqlite(connectionString);
     
-    // Configurações adicionais para desenvolvimento
+    // Configuraï¿½ï¿½es adicionais para desenvolvimento
     if (builder.Environment.IsDevelopment())
     {
         options.EnableSensitiveDataLogging();
@@ -27,7 +32,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
-// Inicializar banco de dados na inicialização da aplicação
+// Inicializar banco de dados na inicializaï¿½ï¿½o da aplicaï¿½ï¿½o
 using (var scope = app.Services.CreateScope())
 {
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();

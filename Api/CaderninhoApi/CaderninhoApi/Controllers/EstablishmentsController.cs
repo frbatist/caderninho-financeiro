@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using CaderninhoApi.Domain.Entities;
 using CaderninhoApi.Infrastructure.Data;
 using CaderninhoApi.Request;
+using CaderninhoApi.Domain.Abstractions.ApplicationServices;
+using CaderninhoApi.Domain.DTOs;
 
 namespace CaderninhoApi.Controllers;
 
@@ -14,13 +16,16 @@ namespace CaderninhoApi.Controllers;
 public class EstablishmentsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private readonly IEstablishmentService _establishmentService;
     private readonly ILogger<EstablishmentsController> _logger;
 
     public EstablishmentsController(
         ApplicationDbContext context,
+        IEstablishmentService establishmentService,
         ILogger<EstablishmentsController> logger)
     {
         _context = context;
+        _establishmentService = establishmentService;
         _logger = logger;
     }
 
@@ -96,6 +101,32 @@ public class EstablishmentsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao buscar estabelecimento {EstablishmentId}", id);
+            return StatusCode(500, "Erro interno do servidor");
+        }
+    }
+
+    /// <summary>
+    /// Cria um novo estabelecimento
+    /// </summary>
+    /// <param name="dto">Dados do estabelecimento a ser criado</param>
+    /// <returns>Estabelecimento criado</returns>
+    [HttpPost]
+    public async Task<ActionResult<Establishment>> Create([FromBody] CreateEstablishmentDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var establishment = await _establishmentService.AddAsync(dto);
+
+            return CreatedAtAction(nameof(GetById), new { id = establishment.Id }, establishment);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao criar estabelecimento");
             return StatusCode(500, "Erro interno do servidor");
         }
     }
