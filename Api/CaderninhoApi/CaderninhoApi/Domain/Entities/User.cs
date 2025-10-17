@@ -1,27 +1,27 @@
 namespace CaderninhoApi.Domain.Entities;
 
 /// <summary>
-/// Entidade que representa um usuário do sistema
+/// Entidade que representa um usuï¿½rio do sistema
 /// </summary>
 public class User : BaseEntity
 {
     /// <summary>
-    /// Nome completo do usuário
+    /// Nome completo do usuï¿½rio
     /// </summary>
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Email do usuário (único no sistema)
+    /// Email do usuï¿½rio (ï¿½nico no sistema)
     /// </summary>
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
-    /// Hash da senha do usuário
+    /// Hash da senha do usuï¿½rio
     /// </summary>
     public string PasswordHash { get; set; } = string.Empty;
 
     /// <summary>
-    /// Indica se o usuário está ativo no sistema
+    /// Indica se o usuï¿½rio estï¿½ ativo no sistema
     /// </summary>
     public bool IsActive { get; set; } = true;
 }

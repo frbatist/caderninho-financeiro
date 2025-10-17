@@ -1,27 +1,27 @@
 namespace CaderninhoApi.Domain.Entities;
 
 /// <summary>
-/// Classe base para todas as entidades do domínio
+/// Classe base para todas as entidades do domï¿½nio
 /// </summary>
 public abstract class BaseEntity
 {
     /// <summary>
-    /// Identificador único da entidade
+    /// Identificador ï¿½nico da entidade
     /// </summary>
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public int Id { get; set; }
 
     /// <summary>
-    /// Data de criação do registro
+    /// Data de criaï¿½ï¿½o do registro
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Data da última atualização do registro
+    /// Data da ï¿½ltima atualizaï¿½ï¿½o do registro
     /// </summary>
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>
-    /// Indica se o registro foi excluído logicamente (soft delete)
+    /// Indica se o registro foi excluï¿½do logicamente (soft delete)
     /// </summary>
     public bool IsDeleted { get; set; } = false;
 }

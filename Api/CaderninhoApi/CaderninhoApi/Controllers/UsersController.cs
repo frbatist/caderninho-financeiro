@@ -6,7 +6,7 @@ using CaderninhoApi.Domain.Entities;
 namespace CaderninhoApi.Controllers;
 
 /// <summary>
-/// Controller para operações relacionadas a usuários
+/// Controller para operaï¿½ï¿½es relacionadas a usuï¿½rios
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -22,9 +22,9 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// Obtém todos os usuários
+    /// Obtï¿½m todos os usuï¿½rios
     /// </summary>
-    /// <returns>Lista de usuários</returns>
+    /// <returns>Lista de usuï¿½rios</returns>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     {
@@ -39,18 +39,18 @@ public class UsersController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao buscar usuários");
+            _logger.LogError(ex, "Erro ao buscar usuï¿½rios");
             return StatusCode(500, "Erro interno do servidor");
         }
     }
 
     /// <summary>
-    /// Obtém um usuário específico por ID
+    /// Obtï¿½m um usuï¿½rio especï¿½fico por ID
     /// </summary>
-    /// <param name="id">ID do usuário</param>
-    /// <returns>Usuário encontrado</returns>
+    /// <param name="id">ID do usuï¿½rio</param>
+    /// <returns>Usuï¿½rio encontrado</returns>
     [HttpGet("{id}")]
-    public async Task<ActionResult<User>> GetUser(Guid id)
+    public async Task<ActionResult<User>> GetUser(int id)
     {
         try
         {
@@ -59,63 +59,63 @@ public class UsersController : ControllerBase
 
             if (user == null)
             {
-                return NotFound("Usuário não encontrado");
+                return NotFound("Usuï¿½rio nï¿½o encontrado");
             }
 
             return Ok(user);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao buscar usuário {UserId}", id);
+            _logger.LogError(ex, "Erro ao buscar usuï¿½rio {UserId}", id);
             return StatusCode(500, "Erro interno do servidor");
         }
     }
 
     /// <summary>
-    /// Cria um novo usuário
+    /// Cria um novo usuï¿½rio
     /// </summary>
-    /// <param name="user">Dados do usuário</param>
-    /// <returns>Usuário criado</returns>
+    /// <param name="user">Dados do usuï¿½rio</param>
+    /// <returns>Usuï¿½rio criado</returns>
     [HttpPost]
     public async Task<ActionResult<User>> CreateUser(User user)
     {
         try
         {
-            // Verificar se email já existe
+            // Verificar se email jï¿½ existe
             var existingUser = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == user.Email);
 
             if (existingUser != null)
             {
-                return BadRequest("Email já está em uso");
+                return BadRequest("Email jï¿½ estï¿½ em uso");
             }
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Usuário criado com sucesso: {UserId}", user.Id);
+            _logger.LogInformation("Usuï¿½rio criado com sucesso: {UserId}", user.Id);
 
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao criar usuário");
+            _logger.LogError(ex, "Erro ao criar usuï¿½rio");
             return StatusCode(500, "Erro interno do servidor");
         }
     }
 
     /// <summary>
-    /// Atualiza um usuário existente
+    /// Atualiza um usuï¿½rio existente
     /// </summary>
-    /// <param name="id">ID do usuário</param>
-    /// <param name="user">Dados atualizados do usuário</param>
-    /// <returns>Usuário atualizado</returns>
+    /// <param name="id">ID do usuï¿½rio</param>
+    /// <param name="user">Dados atualizados do usuï¿½rio</param>
+    /// <returns>Usuï¿½rio atualizado</returns>
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(Guid id, User user)
+    public async Task<IActionResult> UpdateUser(int id, User user)
     {
         if (id != user.Id)
         {
-            return BadRequest("ID do usuário não confere");
+            return BadRequest("ID do usuï¿½rio nï¿½o confere");
         }
 
         try
@@ -125,7 +125,7 @@ public class UsersController : ControllerBase
 
             if (existingUser == null)
             {
-                return NotFound("Usuário não encontrado");
+                return NotFound("Usuï¿½rio nï¿½o encontrado");
             }
 
             // Atualizar apenas campos permitidos
@@ -135,28 +135,28 @@ public class UsersController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Usuário atualizado com sucesso: {UserId}", id);
+            _logger.LogInformation("Usuï¿½rio atualizado com sucesso: {UserId}", id);
 
             return NoContent();
         }
         catch (DbUpdateConcurrencyException)
         {
-            return Conflict("Conflito de concorrência");
+            return Conflict("Conflito de concorrï¿½ncia");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao atualizar usuário {UserId}", id);
+            _logger.LogError(ex, "Erro ao atualizar usuï¿½rio {UserId}", id);
             return StatusCode(500, "Erro interno do servidor");
         }
     }
 
     /// <summary>
-    /// Exclui um usuário (soft delete)
+    /// Exclui um usuï¿½rio (soft delete)
     /// </summary>
-    /// <param name="id">ID do usuário</param>
-    /// <returns>Resultado da operação</returns>
+    /// <param name="id">ID do usuï¿½rio</param>
+    /// <returns>Resultado da operaï¿½ï¿½o</returns>
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteUser(Guid id)
+    public async Task<IActionResult> DeleteUser(int id)
     {
         try
         {
@@ -165,20 +165,20 @@ public class UsersController : ControllerBase
 
             if (user == null)
             {
-                return NotFound("Usuário não encontrado");
+                return NotFound("Usuï¿½rio nï¿½o encontrado");
             }
 
             // Soft delete
             user.IsDeleted = true;
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Usuário excluído com sucesso: {UserId}", id);
+            _logger.LogInformation("Usuï¿½rio excluï¿½do com sucesso: {UserId}", id);
 
             return NoContent();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao excluir usuário {UserId}", id);
+            _logger.LogError(ex, "Erro ao excluir usuï¿½rio {UserId}", id);
             return StatusCode(500, "Erro interno do servidor");
         }
     }

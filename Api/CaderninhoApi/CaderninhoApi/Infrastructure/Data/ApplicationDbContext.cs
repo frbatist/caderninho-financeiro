@@ -4,7 +4,7 @@ using CaderninhoApi.Domain.Entities;
 namespace CaderninhoApi.Infrastructure.Data;
 
 /// <summary>
-/// Contexto do banco de dados da aplicação
+/// Contexto do banco de dados da aplicaï¿½ï¿½o
 /// </summary>
 public class ApplicationDbContext : DbContext
 {
@@ -17,11 +17,21 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<User> Users { get; set; } = null!;
 
+    /// <summary>
+    /// DbSet para a entidade Establishment
+    /// </summary>
+    public DbSet<Establishment> Establishments { get; set; } = null!;
+
+    /// <summary>
+    /// DbSet para a entidade Card
+    /// </summary>
+    public DbSet<Card> Cards { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Aplicar configurações do Fluent API
+        // Aplicar configuraï¿½ï¿½es do Fluent API
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
         // Configurar filtro global para soft delete
@@ -34,7 +44,7 @@ public class ApplicationDbContext : DbContext
             }
         }
 
-        // Seed data para usuários
+        // Seed data para usuï¿½rios
         SeedUsers(modelBuilder);
     }
 
@@ -57,14 +67,16 @@ public class ApplicationDbContext : DbContext
 
         foreach (var entry in entries)
         {
+            var entity = entry.Entity;
+            
             switch (entry.State)
             {
                 case EntityState.Added:
-                    entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    entity.CreatedAt = DateTime.UtcNow;
+                    entity.UpdatedAt = DateTime.UtcNow;
                     break;
                 case EntityState.Modified:
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    entity.UpdatedAt = DateTime.UtcNow;
                     break;
             }
         }
@@ -79,7 +91,7 @@ public class ApplicationDbContext : DbContext
     }
 
     /// <summary>
-    /// Configura os dados iniciais (seed data) para a tabela de usuários
+    /// Configura os dados iniciais (seed data) para a tabela de usuï¿½rios
     /// </summary>
     private static void SeedUsers(ModelBuilder modelBuilder)
     {
@@ -88,7 +100,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<User>().HasData(
             new User
             {
-                Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+                Id = 1,
                 Name = "Fernando",
                 Email = "frbatist@gmail.com",
                 PasswordHash = string.Empty,
@@ -99,7 +111,7 @@ public class ApplicationDbContext : DbContext
             },
             new User
             {
-                Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                Id = 2,
                 Name = "Luana",
                 Email = "luh.silva.vieira@gmail.com",
                 PasswordHash = string.Empty,

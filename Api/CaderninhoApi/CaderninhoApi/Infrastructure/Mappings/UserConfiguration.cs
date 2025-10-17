@@ -5,19 +5,19 @@ using CaderninhoApi.Domain.Entities;
 namespace CaderninhoApi.Infrastructure.Mappings;
 
 /// <summary>
-/// Configuração do Entity Framework para a entidade User
+/// Configuraï¿½ï¿½o do Entity Framework para a entidade User
 /// </summary>
 public class UserConfiguration : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        // Configuração da tabela
+        // Configuraï¿½ï¿½o da tabela
         builder.ToTable("Users");
 
-        // Configuração da chave primária
+        // Configuraï¿½ï¿½o da chave primï¿½ria
         builder.HasKey(u => u.Id);
 
-        // Configuração das propriedades
+        // Configuraï¿½ï¿½o das propriedades
         builder.Property(u => u.Name)
             .IsRequired()
             .HasMaxLength(200);
@@ -37,13 +37,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired();
 
         builder.Property(u => u.UpdatedAt)
-            .IsRequired();
+            .IsRequired(false);
 
         builder.Property(u => u.IsDeleted)
             .IsRequired()
             .HasDefaultValue(false);
 
-        // Configuração de índices
+        // Configuraï¿½ï¿½o de ï¿½ndices
         builder.HasIndex(u => u.Email)
             .IsUnique()
             .HasDatabaseName("IX_Users_Email");

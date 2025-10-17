@@ -64,9 +64,9 @@ Este � um sistema financeiro desenvolvido em .NET 9 com arquitetura limpa (Cle
 ### Entity Framework
 - **Context**: Usar `ApplicationDbContext`
 - **Configura��es**: Usar Fluent API em arquivos separados na pasta `Mappings`
-- **Conven��es**: 
-  - **Primary Keys**: Usar `int` como padr�o para propriedade `Id` (exceto User que mant�m `Guid`)
-  - Usar `CreatedAt` e `UpdatedAt` para auditoria
+- **Convenções**: 
+  - **Primary Keys**: Usar `int` como padrão para propriedade `Id`
+  - Usar `CreatedAt` e `UpdatedAt` para auditoria (`UpdatedAt` nullable)
   - Soft delete com propriedade `IsDeleted`
 
 ## Testes
