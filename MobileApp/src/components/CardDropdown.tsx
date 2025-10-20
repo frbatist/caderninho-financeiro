@@ -124,6 +124,7 @@ export default function CardDropdown({
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
         onCardAdded={handleCardAdded}
+        keepDropdownOpen={true}
       />
     </>
   );

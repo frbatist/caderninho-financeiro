@@ -21,6 +21,7 @@ interface AddCardModalProps {
   visible: boolean;
   onClose: () => void;
   onCardAdded: (card: Card) => void;
+  keepDropdownOpen?: boolean; // Nova prop para controlar se mantém dropdown aberto
 }
 
 // Opções para os selects
@@ -39,7 +40,12 @@ const cardBrandOptions = [
   { value: CardBrand.Other, label: 'Outro' },
 ];
 
-export default function AddCardModal({ visible, onClose, onCardAdded }: AddCardModalProps) {
+export default function AddCardModal({ 
+  visible, 
+  onClose, 
+  onCardAdded,
+  keepDropdownOpen = false 
+}: AddCardModalProps) {
   // Estados do formulário
   const [formData, setFormData] = useState<CreateCardDto>({
     name: '',
@@ -92,19 +98,23 @@ export default function AddCardModal({ visible, onClose, onCardAdded }: AddCardM
     try {
       const newCard = await CaderninhoApiService.cards.create(formData);
       
-      Alert.alert(
-        'Sucesso',
-        'Cartão adicionado com sucesso!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              onCardAdded(newCard);
-              handleClose();
-            },
-          },
-        ]
-      );
+      // Limpar formulário e fechar modal
+      setFormData({
+        name: '',
+        type: CardType.Credit,
+        brand: CardBrand.Visa,
+        lastFourDigits: '',
+      });
+      setErrors({});
+      onClose();
+      
+      // Notificar sucesso e callback para selecionar o novo cartão
+      onCardAdded(newCard);
+      
+      // Mostrar toast de sucesso (não bloqueia a UI)
+      if (!keepDropdownOpen) {
+        Alert.alert('Sucesso', 'Cartão adicionado com sucesso!');
+      }
     } catch (error) {
       console.error('Erro ao criar cartão:', error);
       Alert.alert('Erro', 'Não foi possível adicionar o cartão. Tente novamente.');
