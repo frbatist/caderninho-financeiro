@@ -30,10 +30,11 @@ export interface Expense {
   description: string;
   establishmentId: number;
   establishment: Establishment;
+  paymentType: PaymentType;
   cardId?: number;
   card?: Card;
   amount: number;
-  paymentDate: string;
+  installmentCount: number;
   createdAt: string;
   updatedAt?: string;
 }
@@ -60,6 +61,15 @@ export enum CardBrand {
   AmericanExpress = 3,
   Hipercard = 4,
   Other = 5
+}
+
+export enum PaymentType {
+  CreditCard = 1,
+  DebitCard = 2,
+  Pix = 3,
+  Deposit = 4,
+  Cash = 5,
+  BankSlip = 6
 }
 
 export enum EstablishmentType {
@@ -93,9 +103,10 @@ export interface CreateCardDto {
 export interface CreateExpenseDto {
   description: string;
   establishmentId: number;
+  paymentType: PaymentType;
   cardId?: number;
   amount: number;
-  paymentDate: string;
+  installmentCount: number;
 }
 
 export interface CreateEstablishmentDto {

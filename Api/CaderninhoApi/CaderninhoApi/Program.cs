@@ -11,6 +11,17 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// Configurar CORS para aceitar qualquer origem (apenas para ambiente local)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 // Registrar serviços da aplicação
 builder.Services.AddScoped<IEstablishmentService, EstablishmentService>();
 builder.Services.AddScoped<ICardService, CardService>();
@@ -46,6 +57,9 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+// Habilitar CORS
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 

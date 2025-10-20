@@ -15,6 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
 import CaderninhoApiService, { Expense, ExpenseFilterRequest } from '../services/caderninhoApiService';
 
@@ -85,10 +86,12 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
     }
   }, [selectedYear, selectedMonth]);
 
-  // Carregar despesas quando filtros mudarem
-  useEffect(() => {
-    loadExpenses();
-  }, [loadExpenses]);
+  // Carregar despesas quando a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      loadExpenses();
+    }, [loadExpenses])
+  );
 
   // Refresh da lista
   const onRefresh = () => {
@@ -125,8 +128,7 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
 
   // Navegar para adicionar despesa
   const handleAddExpense = () => {
-    // TODO: Implementar navegação para tela de adicionar despesa
-    Alert.alert('Em desenvolvimento', 'Tela de adicionar despesa será implementada em breve');
+    navigation.navigate('AddExpense');
   };
 
   // Formatar valor monetário
@@ -196,7 +198,7 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
             </Text>
           )}
           <Text style={styles.expenseDate}>
-            📅 {formatDate(item.paymentDate)}
+            📅 {formatDate(item.createdAt)}
           </Text>
         </View>
         
