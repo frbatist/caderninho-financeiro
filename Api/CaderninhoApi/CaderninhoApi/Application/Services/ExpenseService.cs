@@ -1,4 +1,5 @@
 using CaderninhoApi.Domain.Abstractions.ApplicationServices;
+using CaderninhoApi.Domain.Abstractions;
 using CaderninhoApi.Domain.DTOs;
 using CaderninhoApi.Domain.Entities;
 using CaderninhoApi.Domain.Enums;
@@ -14,13 +15,16 @@ public class ExpenseService : IExpenseService
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<ExpenseService> _logger;
+    private readonly ICreditCardInstallmentDomainService _installmentService;
 
     public ExpenseService(
         ApplicationDbContext context,
-        ILogger<ExpenseService> logger)
+        ILogger<ExpenseService> logger,
+        ICreditCardInstallmentDomainService installmentService)
     {
         _context = context;
         _logger = logger;
+        _installmentService = installmentService;
     }
 
     /// <summary>
@@ -63,6 +67,7 @@ public class ExpenseService : IExpenseService
                 PaymentType = dto.PaymentType,
                 CardId = dto.CardId,
                 Amount = dto.Amount,
+                Date = dto.Date,
                 InstallmentCount = dto.InstallmentCount
             };
 
@@ -71,6 +76,17 @@ public class ExpenseService : IExpenseService
 
             _logger.LogInformation("Despesa criada com sucesso: {ExpenseId} - {Description} - R$ {Amount}", 
                 expense.Id, expense.Description, expense.Amount);
+
+            // Se a despesa for cartão de crédito, criar as parcelas
+            if (dto.PaymentType == PaymentType.CreditCard)
+            {
+                _logger.LogInformation("Criando {Count} parcela(s) para a despesa {ExpenseId}", 
+                    dto.InstallmentCount, expense.Id);
+                
+                await _installmentService.CreateInstallmentsAsync(expense);
+                
+                _logger.LogInformation("Parcela(s) criada(s) com sucesso para a despesa {ExpenseId}", expense.Id);
+            }
 
             return expense;
         }

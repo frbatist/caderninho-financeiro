@@ -45,10 +45,17 @@ public class CreateExpenseDto
     public decimal Amount { get; set; }
 
     /// <summary>
+    /// Data da despesa
+    /// </summary>
+    [Required(ErrorMessage = "A data é obrigatória")]
+    [Display(Name = "Data")]
+    public DateTime Date { get; set; }
+
+    /// <summary>
     /// Quantidade de parcelas
     /// </summary>
     [Required(ErrorMessage = "A quantidade de parcelas é obrigatória")]
     [Range(1, 120, ErrorMessage = "A quantidade de parcelas deve ser entre 1 e 120")]
     [Display(Name = "Quantidade de Parcelas")]
-    public int InstallmentCount { get; set; }
+    public int InstallmentCount { get; set; } = 1;
 }

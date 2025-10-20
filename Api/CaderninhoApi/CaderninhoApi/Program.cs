@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using CaderninhoApi.Infrastructure.Data;
 using CaderninhoApi.Domain.Abstractions.ApplicationServices;
 using CaderninhoApi.Application.Services;
+using CaderninhoApi.Domain.Abstractions;
+using CaderninhoApi.Domain.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +30,9 @@ builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IMonthlyEntryService, MonthlyEntryService>();
 builder.Services.AddScoped<IMonthlySpendingLimitService, MonthlySpendingLimitService>();
+
+// Registrar domain services
+builder.Services.AddScoped<ICreditCardInstallmentDomainService, CreditCardInstallmentDomainService>();
 
 // Configuração do Entity Framework com SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>

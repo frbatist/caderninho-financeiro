@@ -22,10 +22,69 @@ Este � um sistema financeiro desenvolvido em .NET 9 com arquitetura limpa (Cle
   - **Entities**: Entidades de dom�nio (ex: `User`, `Transaction`, `Account`)
   - **ValueObjects**: Objetos de valor (ex: `Money`, `Email`)
   - **Interfaces**: Contratos do dom�nio (ex: `IUserRepository`)
+  - **Services**: Domain Services para l�gica de neg�cio complexa que n�o pertence a uma entidade
+  - **Abstractions**: Interfaces de domain services
   - **Enums**: Enumera��es de dom�nio (ex: `PaymentType`, `TransactionType`, `AccountStatus`)
   - **DTOs**: Data Transfer Objects
   - **Exceptions**: Exce��es espec�ficas do dom�nio
   - **Events**: Eventos de dom�nio
+
+#### Domain Services
+- **Prop�sito**: Implementar l�gica de neg�cio complexa que envolve m�ltiplas entidades
+- **Localiza��o**: `/Domain/Services/` (implementa��o) e `/Domain/Abstractions/` (interface)
+- **Responsabilidades**:
+  - Orquestrar opera��es complexas entre entidades
+  - Implementar regras de neg�cio que n�o pertencem a uma �nica entidade
+  - Calcular valores baseados em regras de dom�nio
+  - Validar cen�rios de neg�cio complexos
+- **IMPORTANTE - Domain Services N�O devem**:
+  - **N�O chamar `SaveChangesAsync()`**: A persist�ncia � responsabilidade da camada de aplica��o
+  - **N�O acessar banco de dados diretamente para persist�ncia**: Apenas para leitura quando necess�rio
+  - **N�O ter depend�ncias de infraestrutura**: Apenas `DbContext` para queries se absolutamente necess�rio
+- **Exemplo**:
+```csharp
+// Domain Service para c�lculo de parcelas de cart�o de cr�dito
+public class CreditCardInstallmentDomainService : ICreditCardInstallmentDomainService
+{
+    private readonly ApplicationDbContext _context;
+    
+    public async Task<List<CreditCardInstallment>> CreateInstallmentsAsync(Expense expense)
+    {
+        // 1. Buscar dados necess�rios (READ-ONLY)
+        var card = await _context.Cards.FindAsync(expense.CardId);
+        
+        // 2. Aplicar regras de neg�cio e calcular
+        var installments = new List<CreditCardInstallment>();
+        // ... l�gica de c�lculo ...
+        
+        // 3. Retornar entidades criadas (SEM salvar no banco)
+        return installments;
+    }
+}
+
+// Application Service que consome o Domain Service
+public class ExpenseService : IExpenseService
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ICreditCardInstallmentDomainService _installmentService;
+    
+    public async Task<Expense> CreateAsync(CreateExpenseDto dto)
+    {
+        var expense = new Expense { /* ... */ };
+        _context.Expenses.Add(expense);
+        await _context.SaveChangesAsync(); // Application Service salva a despesa
+        
+        // Domain Service retorna as parcelas calculadas
+        var installments = await _installmentService.CreateInstallmentsAsync(expense);
+        
+        // Application Service persiste as parcelas
+        await _context.CreditCardInstallments.AddRangeAsync(installments);
+        await _context.SaveChangesAsync();
+        
+        return expense;
+    }
+}
+```
 
 ### 3. Infrastructure (Camada de Infraestrutura)
 - **Localiza��o**: `/Infrastructure/`
@@ -434,6 +493,143 @@ builder.Services.AddScoped<ICardService, CardService>();
 - **Services retornam bool para deletes**: Indicar sucesso/falha
 - **Logging**: Todas as operações devem ter logs apropriados
 - **Validação**: ModelState no controller, validações de negócio no service
+
+## Domain Services vs Application Services
+
+### Diferenças Fundamentais
+
+#### Domain Services (`Domain/Services/`)
+- **Propósito**: Encapsular lógica de negócio complexa do domínio
+- **Responsabilidade**: Implementar regras de negócio que envolvem múltiplas entidades
+- **Persistência**: **NUNCA chama `SaveChangesAsync()`** - apenas cria/modifica objetos em memória
+- **Retorno**: Retorna entidades ou listas de entidades já configuradas
+- **Dependências**: Mínimas - apenas `DbContext` para leitura se absolutamente necessário, `ILogger`
+- **Registro DI**: `AddScoped<IDomainService, DomainService>()`
+- **Exemplo**: Calcular parcelas de cartão, aplicar regras de desconto, validar regras complexas
+
+```csharp
+// Domain Service - Apenas cálculos e lógica de negócio
+public class CreditCardInstallmentDomainService : ICreditCardInstallmentDomainService
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<CreditCardInstallmentDomainService> _logger;
+    
+    public async Task<List<CreditCardInstallment>> CreateInstallmentsAsync(Expense expense)
+    {
+        // 1. Buscar dados (READ-ONLY)
+        var card = await _context.Cards.FindAsync(expense.CardId);
+        
+        // 2. Calcular e criar objetos
+        var installments = new List<CreditCardInstallment>();
+        var firstDueDate = CalculateFirstDueDate(expense.Date, card.ClosingDay);
+        
+        for (int i = 1; i <= expense.InstallmentCount; i++)
+        {
+            installments.Add(new CreditCardInstallment
+            {
+                CardId = expense.CardId.Value,
+                ExpenseId = expense.Id,
+                InstallmentNumber = i,
+                // ... outras propriedades
+            });
+        }
+        
+        // 3. Retornar sem salvar
+        return installments;
+    }
+    
+    // Métodos privados com regras de negócio
+    private DateTime CalculateFirstDueDate(DateTime expenseDate, int closingDay)
+    {
+        // Lógica complexa de cálculo
+    }
+}
+```
+
+#### Application Services (`Application/Services/`)
+- **Propósito**: Orquestrar casos de uso da aplicação
+- **Responsabilidade**: Coordenar operações, validar entrada, persistir dados
+- **Persistência**: **SEMPRE chama `SaveChangesAsync()`** - responsável por transações
+- **Retorno**: Retorna entidades persistidas
+- **Dependências**: Pode ter múltiplas - DbContext, Domain Services, outros Application Services
+- **Registro DI**: `AddScoped<IApplicationService, ApplicationService>()`
+- **Exemplo**: Criar despesa, atualizar usuário, processar pagamento
+
+```csharp
+// Application Service - Orquestra e persiste
+public class ExpenseService : IExpenseService
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ICreditCardInstallmentDomainService _installmentService;
+    private readonly ILogger<ExpenseService> _logger;
+    
+    public async Task<Expense> CreateAsync(CreateExpenseDto dto)
+    {
+        // 1. Validações de aplicação
+        var establishmentExists = await _context.Establishments.AnyAsync(e => e.Id == dto.EstablishmentId);
+        if (!establishmentExists)
+            throw new InvalidOperationException("Estabelecimento não encontrado");
+        
+        // 2. Criar entidade principal
+        var expense = new Expense
+        {
+            Description = dto.Description,
+            Amount = dto.Amount,
+            Date = dto.Date,
+            // ... outras propriedades
+        };
+        
+        // 3. Persistir entidade principal
+        _context.Expenses.Add(expense);
+        await _context.SaveChangesAsync();
+        
+        // 4. Se necessário, chamar Domain Service
+        if (dto.PaymentType == PaymentType.CreditCard)
+        {
+            var installments = await _installmentService.CreateInstallmentsAsync(expense);
+            
+            // 5. Persistir resultado do Domain Service
+            await _context.CreditCardInstallments.AddRangeAsync(installments);
+            await _context.SaveChangesAsync();
+        }
+        
+        return expense;
+    }
+}
+```
+
+### Quando Usar Domain Service?
+✅ **Use Domain Service quando:**
+- Lógica envolve múltiplas entidades
+- Cálculos complexos baseados em regras de negócio
+- Validações que dependem de estado de múltiplas entidades
+- Algoritmos específicos do domínio (ex: calcular parcelas, aplicar juros)
+
+❌ **NÃO use Domain Service para:**
+- CRUD simples de uma entidade
+- Apenas validar entrada de dados
+- Operações que só precisam persistir dados
+- Queries simples
+
+### Checklist de Domain Service
+- [ ] Interface está em `Domain/Abstractions/`
+- [ ] Implementação está em `Domain/Services/`
+- [ ] **NÃO chama `SaveChangesAsync()`**
+- [ ] Retorna objetos criados/modificados (não persiste)
+- [ ] Tem logs de debug para rastreamento
+- [ ] Validações de negócio estão presentes
+- [ ] Métodos privados encapsulam lógica complexa
+- [ ] Registrado no DI como `Scoped`
+
+### Checklist de Application Service
+- [ ] Interface está em `Domain/Abstractions/ApplicationServices/`
+- [ ] Implementação está em `Application/Services/`
+- [ ] **Chama `SaveChangesAsync()`** para persistir
+- [ ] Valida entrada antes de processar
+- [ ] Pode injetar Domain Services
+- [ ] Orquestra múltiplas operações se necessário
+- [ ] Trata exceções apropriadamente
+- [ ] Registrado no DI como `Scoped`
 
 ## Próximos Passos
 - Implementar autentica��o e autoriza��o

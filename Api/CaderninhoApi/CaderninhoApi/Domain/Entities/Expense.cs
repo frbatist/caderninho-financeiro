@@ -63,8 +63,16 @@ public class Expense : BaseEntity
     public decimal Amount { get; set; }
 
     /// <summary>
+    /// Data da despesa
+    /// </summary>
+    [Display(Name = "Data")]
+    [Required(ErrorMessage = "A data da despesa é obrigatória")]
+    public DateTime Date { get; set; }
+
+    /// <summary>
     /// Quantidade de parcelas
     /// </summary>
     [Display(Name = "Quantidade de Parcelas")]
-    public int InstallmentCount { get; set; }
+    [Range(1, 120, ErrorMessage = "A quantidade de parcelas deve estar entre 1 e 120")]
+    public int InstallmentCount { get; set; } = 1;
 }

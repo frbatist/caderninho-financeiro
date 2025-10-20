@@ -42,6 +42,11 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<MonthlySpendingLimit> MonthlySpendingLimits { get; set; } = null!;
 
+    /// <summary>
+    /// DbSet para a entidade CreditCardInstallment
+    /// </summary>
+    public DbSet<CreditCardInstallment> CreditCardInstallments { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
