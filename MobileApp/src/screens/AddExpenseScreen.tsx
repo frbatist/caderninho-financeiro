@@ -114,16 +114,14 @@ export default function AddExpenseScreen({ navigation, route }: AddExpenseScreen
 
       await CaderninhoApiService.expenses.create(expenseData);
 
-      Alert.alert(
-        'Sucesso',
-        'Despesa adicionada com sucesso!',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      // Voltar automaticamente para a tela de despesas
+      navigation.goBack();
+      
+      // Mostrar toast de sucesso (não bloqueia a navegação)
+      // O Alert aparecerá na tela anterior
+      setTimeout(() => {
+        Alert.alert('Sucesso', 'Despesa adicionada com sucesso!');
+      }, 300);
     } catch (error) {
       console.error('Erro ao criar despesa:', error);
       Alert.alert('Erro', 'Não foi possível adicionar a despesa. Tente novamente.');
