@@ -38,4 +38,11 @@ public class CreateCardDto
     [RegularExpression(@"^\d{4}$", ErrorMessage = "Deve conter apenas números")]
     [Display(Name = "Últimos 4 Dígitos")]
     public string LastFourDigits { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Dia do mês em que a fatura fecha (1-31)
+    /// </summary>
+    [Range(1, 31, ErrorMessage = "O dia de fechamento deve estar entre 1 e 31")]
+    [Display(Name = "Dia de Fechamento")]
+    public int? ClosingDay { get; set; }
 }

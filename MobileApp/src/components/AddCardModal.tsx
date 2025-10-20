@@ -52,6 +52,7 @@ export default function AddCardModal({
     type: CardType.Credit,
     brand: CardBrand.Visa,
     lastFourDigits: '',
+    closingDay: undefined,
   });
 
   // Estados de controle
@@ -65,6 +66,7 @@ export default function AddCardModal({
       type: CardType.Credit,
       brand: CardBrand.Visa,
       lastFourDigits: '',
+      closingDay: undefined,
     });
     setErrors({});
     onClose();
@@ -104,6 +106,7 @@ export default function AddCardModal({
         type: CardType.Credit,
         brand: CardBrand.Visa,
         lastFourDigits: '',
+        closingDay: undefined,
       });
       setErrors({});
       onClose();
@@ -215,6 +218,28 @@ export default function AddCardModal({
                 {errors.lastFourDigits && <Text style={styles.errorText}>{errors.lastFourDigits}</Text>}
               </View>
 
+              {/* Dia de fechamento da fatura */}
+              <View style={styles.fieldContainer}>
+                <Text style={styles.label}>Dia de Fechamento (opcional)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.closingDay?.toString() || ''}
+                  onChangeText={(text) => {
+                    const day = text ? parseInt(text.replace(/\D/g, '')) : undefined;
+                    if (day === undefined || (day >= 1 && day <= 31)) {
+                      updateField('closingDay', day);
+                    }
+                  }}
+                  placeholder="Ex: 10 (1-31)"
+                  keyboardType="numeric"
+                  maxLength={2}
+                  editable={!loading}
+                />
+                <Text style={styles.helperText}>
+                  Dia do mês em que a fatura fecha (1 a 31)
+                </Text>
+              </View>
+
               {/* Tipo do cartão */}
               {renderSelect(
                 'Tipo do Cartão',
@@ -321,6 +346,11 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#FF6B6B',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  helperText: {
+    color: '#999',
     fontSize: 12,
     marginTop: 4,
   },

@@ -21,6 +21,7 @@ export interface Card {
   type: CardType;
   brand: CardBrand;
   lastFourDigits: string;
+  closingDay?: number;
   createdAt: string;
   updatedAt?: string;
 }
@@ -43,6 +44,19 @@ export interface Establishment {
   id: number;
   name: string;
   type: EstablishmentType;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface MonthlyEntry {
+  id: number;
+  type: MonthlyEntryType;
+  description: string;
+  amount: number;
+  operation: OperationType;
+  isActive: boolean;
+  month: number;
+  year: number;
   createdAt: string;
   updatedAt?: string;
 }
@@ -87,6 +101,18 @@ export enum EstablishmentType {
   Other = 11
 }
 
+export enum MonthlyEntryType {
+  Salary = 1,
+  Tax = 2,
+  MonthlyBill = 3,
+  Other = 4
+}
+
+export enum OperationType {
+  Income = 1,
+  Expense = 2
+}
+
 // DTOs para criação
 export interface CreateUserDto {
   name: string;
@@ -98,6 +124,7 @@ export interface CreateCardDto {
   type: CardType;
   brand: CardBrand;
   lastFourDigits: string;
+  closingDay?: number;
 }
 
 export interface CreateExpenseDto {
@@ -112,6 +139,15 @@ export interface CreateExpenseDto {
 export interface CreateEstablishmentDto {
   name: string;
   type: EstablishmentType;
+}
+
+export interface CreateMonthlyEntryDto {
+  type: MonthlyEntryType;
+  description: string;
+  amount: number;
+  operation: OperationType;
+  month: number;
+  year: number;
 }
 
 // Resposta paginada
@@ -135,6 +171,12 @@ export interface FilterRequest {
 export interface ExpenseFilterRequest extends FilterRequest {
   year?: number;
   month?: number;
+}
+
+export interface MonthlyEntryFilterRequest extends FilterRequest {
+  year?: number;
+  month?: number;
+  isActive?: boolean;
 }
 
 /**
@@ -241,12 +283,51 @@ export class EstablishmentsService {
   }
 }
 
+/**
+ * Serviços para Entradas Mensais
+ */
+export class MonthlyEntriesService {
+  static async getAll(filter?: MonthlyEntryFilterRequest): Promise<PagedResponse<MonthlyEntry>> {
+    const params: Record<string, any> = {};
+    if (filter?.pageNumber) params.pageNumber = filter.pageNumber;
+    if (filter?.pageSize) params.pageSize = filter.pageSize;
+    if (filter?.searchText) params.searchText = filter.searchText;
+    if (filter?.year) params.year = filter.year;
+    if (filter?.month) params.month = filter.month;
+    if (filter?.isActive !== undefined) params.isActive = filter.isActive;
+
+    const url = apiService.buildUrlWithParams(API_ENDPOINTS.MONTHLY_ENTRIES, params);
+    return apiService.get<PagedResponse<MonthlyEntry>>(url);
+  }
+
+  static async getById(id: number): Promise<MonthlyEntry> {
+    return apiService.get<MonthlyEntry>(API_ENDPOINTS.MONTHLY_ENTRY_BY_ID(id));
+  }
+
+  static async create(data: CreateMonthlyEntryDto): Promise<MonthlyEntry> {
+    return apiService.post<MonthlyEntry>(API_ENDPOINTS.CREATE_MONTHLY_ENTRY, data);
+  }
+
+  static async update(id: number, data: CreateMonthlyEntryDto): Promise<MonthlyEntry> {
+    return apiService.put<MonthlyEntry>(API_ENDPOINTS.UPDATE_MONTHLY_ENTRY(id), data);
+  }
+
+  static async delete(id: number): Promise<void> {
+    return apiService.delete<void>(API_ENDPOINTS.DELETE_MONTHLY_ENTRY(id));
+  }
+
+  static async toggleActive(id: number, isActive: boolean): Promise<MonthlyEntry> {
+    return apiService.patch<MonthlyEntry>(API_ENDPOINTS.TOGGLE_MONTHLY_ENTRY_ACTIVE(id), isActive);
+  }
+}
+
 // Export default com todos os serviços
 const CaderninhoApiService = {
   users: UsersService,
   cards: CardsService,
   expenses: ExpensesService,
   establishments: EstablishmentsService,
+  monthlyEntries: MonthlyEntriesService,
 };
 
 export default CaderninhoApiService;

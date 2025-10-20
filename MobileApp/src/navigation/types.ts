@@ -8,6 +8,8 @@ export type RootStackParamList = {
   Expenses: undefined;
   ExpenseDetail: { expenseId: number };
   AddExpense: undefined;
+  MonthlyEntries: undefined;
+  AddMonthlyEntry: undefined;
   Transactions: undefined;
   TransactionDetail: { transactionId: number };
   AddTransaction: undefined;

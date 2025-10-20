@@ -12,6 +12,8 @@ import { RootStackParamList } from './types';
 import HomeScreen from '../screens/HomeScreen';
 import ExpensesScreen from '../screens/ExpensesScreen';
 import AddExpenseScreen from '../screens/AddExpenseScreen';
+import MonthlyEntriesScreen from '../screens/MonthlyEntriesScreen';
+import AddMonthlyEntryScreen from '../screens/AddMonthlyEntryScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -44,6 +46,16 @@ export default function Navigation() {
           name="AddExpense" 
           component={AddExpenseScreen}
           options={{ title: 'Nova Despesa' }}
+        />
+        <Stack.Screen 
+          name="MonthlyEntries" 
+          component={MonthlyEntriesScreen}
+          options={{ title: 'Entradas Mensais' }}
+        />
+        <Stack.Screen 
+          name="AddMonthlyEntry" 
+          component={AddMonthlyEntryScreen}
+          options={{ title: 'Nova Entrada Mensal' }}
         />
         {/* Adicione mais telas aqui conforme desenvolver */}
       </Stack.Navigator>

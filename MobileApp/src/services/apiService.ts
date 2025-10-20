@@ -99,6 +99,14 @@ class ApiService {
   }
 
   /**
+   * Requisição PATCH
+   */
+  async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await apiClient.patch<T>(url, data, config);
+    return response.data;
+  }
+
+  /**
    * Constrói URL com query parameters
    */
   buildUrlWithParams(baseUrl: string, params?: Record<string, any>): string {

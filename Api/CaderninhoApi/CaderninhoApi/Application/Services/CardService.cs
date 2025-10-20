@@ -35,7 +35,8 @@ public class CardService : ICardService
                 Name = dto.Name,
                 Type = dto.Type,
                 Brand = dto.Brand,
-                LastFourDigits = dto.LastFourDigits
+                LastFourDigits = dto.LastFourDigits,
+                ClosingDay = dto.ClosingDay
             };
 
             _context.Cards.Add(card);

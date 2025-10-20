@@ -37,6 +37,14 @@ export const API_ENDPOINTS = {
   ESTABLISHMENTS: '/establishments',
   ESTABLISHMENT_BY_ID: (id: number) => `/establishments/${id}`,
   CREATE_ESTABLISHMENT: '/establishments',
+  
+  // Entradas Mensais (Monthly Entries)
+  MONTHLY_ENTRIES: '/monthlyentries',
+  MONTHLY_ENTRY_BY_ID: (id: number) => `/monthlyentries/${id}`,
+  CREATE_MONTHLY_ENTRY: '/monthlyentries',
+  UPDATE_MONTHLY_ENTRY: (id: number) => `/monthlyentries/${id}`,
+  DELETE_MONTHLY_ENTRY: (id: number) => `/monthlyentries/${id}`,
+  TOGGLE_MONTHLY_ENTRY_ACTIVE: (id: number) => `/monthlyentries/${id}/toggle-active`,
 } as const;
 
 // Parâmetros de consulta para filtros

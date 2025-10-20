@@ -31,4 +31,10 @@ public class Card : BaseEntity
     /// </summary>
     [Display(Name = "Últimos 4 Dígitos")]
     public string LastFourDigits { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Dia do mês em que a fatura fecha (1-31)
+    /// </summary>
+    [Display(Name = "Dia de Fechamento")]
+    public int? ClosingDay { get; set; }
 }
