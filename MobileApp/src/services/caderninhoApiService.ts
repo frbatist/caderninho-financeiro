@@ -35,6 +35,7 @@ export interface Expense {
   cardId?: number;
   card?: Card;
   amount: number;
+  date: string;
   installmentCount: number;
   createdAt: string;
   updatedAt?: string;
@@ -144,6 +145,7 @@ export interface CreateExpenseDto {
   paymentType: PaymentType;
   cardId?: number;
   amount: number;
+  date: string;
   installmentCount: number;
 }
 

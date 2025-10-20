@@ -47,6 +47,7 @@ export default function AddExpenseScreen({ navigation, route }: AddExpenseScreen
   // Estados do formulário
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]); // Formato YYYY-MM-DD
   const [paymentType, setPaymentType] = useState<PaymentType>(PaymentType.CreditCard);
   const [selectedEstablishment, setSelectedEstablishment] = useState<Establishment | null>(null);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
@@ -73,6 +74,21 @@ export default function AddExpenseScreen({ navigation, route }: AddExpenseScreen
       const numericAmount = parseFloat(amount.replace(',', '.'));
       if (isNaN(numericAmount) || numericAmount <= 0) {
         newErrors.amount = 'Valor deve ser maior que zero';
+      }
+    }
+
+    if (!date.trim()) {
+      newErrors.date = 'Data é obrigatória';
+    } else {
+      // Validar formato YYYY-MM-DD
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(date)) {
+        newErrors.date = 'Data inválida. Use o formato AAAA-MM-DD';
+      } else {
+        const parsedDate = new Date(date);
+        if (isNaN(parsedDate.getTime())) {
+          newErrors.date = 'Data inválida';
+        }
       }
     }
 
@@ -107,6 +123,7 @@ export default function AddExpenseScreen({ navigation, route }: AddExpenseScreen
         description: description.trim(),
         establishmentId: selectedEstablishment!.id,
         amount: numericAmount,
+        date: date, // Data no formato YYYY-MM-DD
         paymentType,
         cardId: requiresCard ? selectedCard?.id : undefined,
         installmentCount: parseInt(installmentCount),
@@ -175,6 +192,23 @@ export default function AddExpenseScreen({ navigation, route }: AddExpenseScreen
             editable={!loading}
           />
           {errors.amount && <Text style={styles.errorText}>{errors.amount}</Text>}
+        </View>
+
+        {/* Data */}
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Data *</Text>
+          <TextInput
+            style={[styles.input, errors.date && styles.inputError]}
+            value={date}
+            onChangeText={(text) => {
+              setDate(text);
+              updateField('date', text);
+            }}
+            placeholder="YYYY-MM-DD"
+            editable={!loading}
+          />
+          {errors.date && <Text style={styles.errorText}>{errors.date}</Text>}
+          <Text style={styles.helperText}>Formato: AAAA-MM-DD (ex: 2025-10-20)</Text>
         </View>
 
         {/* Tipo de Pagamento */}
@@ -323,6 +357,12 @@ const styles = StyleSheet.create({
     color: '#FF6B6B',
     fontSize: 12,
     marginTop: 4,
+  },
+  helperText: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   paymentTypeGrid: {
     flexDirection: 'row',

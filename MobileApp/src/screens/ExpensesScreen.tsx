@@ -198,8 +198,13 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
             </Text>
           )}
           <Text style={styles.expenseDate}>
-            📅 {formatDate(item.createdAt)}
+            📅 {formatDate(item.date)}
           </Text>
+          {item.installmentCount > 1 && (
+            <Text style={styles.expenseInstallments}>
+              🔢 {item.installmentCount}x parcelas
+            </Text>
+          )}
         </View>
         
         <TouchableOpacity
@@ -419,6 +424,11 @@ const styles = StyleSheet.create({
   expenseDate: {
     fontSize: 14,
     color: '#666',
+  },
+  expenseInstallments: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '600',
   },
   deleteButton: {
     padding: 8,
