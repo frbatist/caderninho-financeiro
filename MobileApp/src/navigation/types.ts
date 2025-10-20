@@ -4,6 +4,7 @@
  */
 
 export type RootStackParamList = {
+  UserSelection: undefined;
   Home: undefined;
   Expenses: undefined;
   ExpenseDetail: { expenseId: number };

@@ -3,23 +3,82 @@
  * Mostra resumo financeiro e navegação principal
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
+import UserStorageService from '../services/userStorageService';
+import { User } from '../services/caderninhoApiService';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
 };
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    loadUser();
+    
+    // Recarrega usuário quando a tela ganha foco
+    const unsubscribe = navigation.addListener('focus', loadUser);
+    return unsubscribe;
+  }, [navigation]);
+
+  /**
+   * Carrega o usuário do storage
+   */
+  const loadUser = async () => {
+    try {
+      const user = await UserStorageService.getUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Erro ao carregar usuário:', error);
+    }
+  };
+
+  /**
+   * Troca de usuário
+   */
+  const changeUser = () => {
+    Alert.alert(
+      'Trocar Usuário',
+      'Deseja realmente trocar de usuário?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Trocar',
+          style: 'destructive',
+          onPress: async () => {
+            await UserStorageService.removeUser();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'UserSelection' }],
+            });
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
         {/* Cabeçalho */}
         <View style={styles.header}>
-          <Text style={styles.title}>Bem-vindo!</Text>
-          <Text style={styles.subtitle}>Seu controle financeiro pessoal</Text>
+          <View>
+            <Text style={styles.title}>Bem-vindo{currentUser ? `, ${currentUser.name.split(' ')[0]}` : ''}!</Text>
+            <Text style={styles.subtitle}>Seu controle financeiro pessoal</Text>
+          </View>
+          {currentUser && (
+            <TouchableOpacity style={styles.userButton} onPress={changeUser}>
+              <View style={styles.userAvatar}>
+                <Text style={styles.userAvatarText}>
+                  {currentUser.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Card de resumo */}
@@ -116,6 +175,25 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  userButton: {
+    padding: 4,
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userAvatarText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
   },
   title: {
     fontSize: 28,

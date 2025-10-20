@@ -24,6 +24,7 @@ import CaderninhoApiService, {
   Card, 
   Establishment 
 } from '../services/caderninhoApiService';
+import UserStorageService from '../services/userStorageService';
 
 type AddExpenseScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddExpense'>;
 type AddExpenseScreenRouteProp = RouteProp<RootStackParamList, 'AddExpense'>;
@@ -117,9 +118,21 @@ export default function AddExpenseScreen({ navigation, route }: AddExpenseScreen
 
     setLoading(true);
     try {
+      // Buscar usuário do storage
+      const user = await UserStorageService.getUser();
+      if (!user) {
+        Alert.alert('Erro', 'Usuário não encontrado. Por favor, faça login novamente.');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'UserSelection' }],
+        });
+        return;
+      }
+
       const numericAmount = parseFloat(amount.replace(',', '.'));
       
       const expenseData: CreateExpenseDto = {
+        userId: user.id,
         description: description.trim(),
         establishmentId: selectedEstablishment!.id,
         amount: numericAmount,

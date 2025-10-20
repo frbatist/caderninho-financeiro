@@ -140,6 +140,7 @@ export interface CreateCardDto {
 }
 
 export interface CreateExpenseDto {
+  userId: number;
   description: string;
   establishmentId: number;
   paymentType: PaymentType;
