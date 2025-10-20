@@ -45,11 +45,27 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
-// Inicializar banco de dados na inicializa��o da aplica��o
+// Aplicar migrations e inicializar banco de dados na inicialização da aplicação
 using (var scope = app.Services.CreateScope())
 {
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    await DatabaseInitializer.InitializeAsync(scope.ServiceProvider, logger);
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    
+    try
+    {
+        // Aplicar migrations pendentes automaticamente
+        logger.LogInformation("Verificando e aplicando migrations...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Migrations aplicadas com sucesso");
+        
+        // Inicializar dados seed
+        await DatabaseInitializer.InitializeAsync(scope.ServiceProvider, logger);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Erro ao aplicar migrations ou inicializar banco de dados");
+        throw;
+    }
 }
 
 // Configure the HTTP request pipeline.
