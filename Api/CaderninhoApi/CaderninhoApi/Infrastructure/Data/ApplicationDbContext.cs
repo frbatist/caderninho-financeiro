@@ -37,6 +37,11 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<MonthlyEntry> MonthlyEntries { get; set; } = null!;
 
+    /// <summary>
+    /// DbSet para a entidade MonthlySpendingLimit
+    /// </summary>
+    public DbSet<MonthlySpendingLimit> MonthlySpendingLimits { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

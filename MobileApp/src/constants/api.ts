@@ -45,6 +45,14 @@ export const API_ENDPOINTS = {
   UPDATE_MONTHLY_ENTRY: (id: number) => `/monthlyentries/${id}`,
   DELETE_MONTHLY_ENTRY: (id: number) => `/monthlyentries/${id}`,
   TOGGLE_MONTHLY_ENTRY_ACTIVE: (id: number) => `/monthlyentries/${id}/toggle-active`,
+  
+  // Limites de Gasto Mensal (Monthly Spending Limits)
+  MONTHLY_SPENDING_LIMITS: '/monthlyspendinglimits',
+  MONTHLY_SPENDING_LIMIT_BY_ID: (id: number) => `/monthlyspendinglimits/${id}`,
+  CREATE_MONTHLY_SPENDING_LIMIT: '/monthlyspendinglimits',
+  UPDATE_MONTHLY_SPENDING_LIMIT: (id: number) => `/monthlyspendinglimits/${id}`,
+  DELETE_MONTHLY_SPENDING_LIMIT: (id: number) => `/monthlyspendinglimits/${id}`,
+  TOGGLE_MONTHLY_SPENDING_LIMIT_ACTIVE: (id: number) => `/monthlyspendinglimits/${id}/toggle-active`,
 } as const;
 
 // Parâmetros de consulta para filtros

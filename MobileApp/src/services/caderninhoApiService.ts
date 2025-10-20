@@ -61,6 +61,17 @@ export interface MonthlyEntry {
   updatedAt?: string;
 }
 
+export interface MonthlySpendingLimit {
+  id: number;
+  establishmentType: EstablishmentType;
+  limitAmount: number;
+  isActive: boolean;
+  month: number;
+  year: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 // Enums baseados na API .NET
 export enum CardType {
   Credit = 0,
@@ -150,6 +161,13 @@ export interface CreateMonthlyEntryDto {
   year: number;
 }
 
+export interface CreateMonthlySpendingLimitDto {
+  establishmentType: EstablishmentType;
+  limitAmount: number;
+  month: number;
+  year: number;
+}
+
 // Resposta paginada
 export interface PagedResponse<T> {
   items: T[];
@@ -174,6 +192,13 @@ export interface ExpenseFilterRequest extends FilterRequest {
 }
 
 export interface MonthlyEntryFilterRequest extends FilterRequest {
+  year?: number;
+  month?: number;
+  isActive?: boolean;
+}
+
+export interface MonthlySpendingLimitFilterRequest extends FilterRequest {
+  establishmentType?: EstablishmentType;
   year?: number;
   month?: number;
   isActive?: boolean;
@@ -321,6 +346,45 @@ export class MonthlyEntriesService {
   }
 }
 
+/**
+ * Serviços para Limites de Gasto Mensal
+ */
+export class MonthlySpendingLimitsService {
+  static async getAll(filter?: MonthlySpendingLimitFilterRequest): Promise<PagedResponse<MonthlySpendingLimit>> {
+    const params: Record<string, any> = {};
+    if (filter?.pageNumber) params.pageNumber = filter.pageNumber;
+    if (filter?.pageSize) params.pageSize = filter.pageSize;
+    if (filter?.searchText) params.searchText = filter.searchText;
+    if (filter?.establishmentType !== undefined) params.establishmentType = filter.establishmentType;
+    if (filter?.year) params.year = filter.year;
+    if (filter?.month) params.month = filter.month;
+    if (filter?.isActive !== undefined) params.isActive = filter.isActive;
+
+    const url = apiService.buildUrlWithParams(API_ENDPOINTS.MONTHLY_SPENDING_LIMITS, params);
+    return apiService.get<PagedResponse<MonthlySpendingLimit>>(url);
+  }
+
+  static async getById(id: number): Promise<MonthlySpendingLimit> {
+    return apiService.get<MonthlySpendingLimit>(API_ENDPOINTS.MONTHLY_SPENDING_LIMIT_BY_ID(id));
+  }
+
+  static async create(data: CreateMonthlySpendingLimitDto): Promise<MonthlySpendingLimit> {
+    return apiService.post<MonthlySpendingLimit>(API_ENDPOINTS.CREATE_MONTHLY_SPENDING_LIMIT, data);
+  }
+
+  static async update(id: number, data: CreateMonthlySpendingLimitDto): Promise<MonthlySpendingLimit> {
+    return apiService.put<MonthlySpendingLimit>(API_ENDPOINTS.UPDATE_MONTHLY_SPENDING_LIMIT(id), data);
+  }
+
+  static async delete(id: number): Promise<void> {
+    return apiService.delete<void>(API_ENDPOINTS.DELETE_MONTHLY_SPENDING_LIMIT(id));
+  }
+
+  static async toggleActive(id: number, isActive: boolean): Promise<MonthlySpendingLimit> {
+    return apiService.patch<MonthlySpendingLimit>(API_ENDPOINTS.TOGGLE_MONTHLY_SPENDING_LIMIT_ACTIVE(id), isActive);
+  }
+}
+
 // Export default com todos os serviços
 const CaderninhoApiService = {
   users: UsersService,
@@ -328,6 +392,7 @@ const CaderninhoApiService = {
   expenses: ExpensesService,
   establishments: EstablishmentsService,
   monthlyEntries: MonthlyEntriesService,
+  monthlySpendingLimits: MonthlySpendingLimitsService,
 };
 
 export default CaderninhoApiService;

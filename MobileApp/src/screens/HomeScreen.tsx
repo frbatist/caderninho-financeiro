@@ -51,6 +51,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             onPress={() => navigation.navigate('MonthlyEntries')}
           />
           <MenuButton
+            title="Limites de Gasto"
+            icon="📊"
+            onPress={() => navigation.navigate('MonthlySpendingLimits')}
+          />
+          <MenuButton
             title="Transações"
             icon="💰"
             onPress={() => navigation.navigate('Transactions')}
@@ -67,7 +72,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           />
           <MenuButton
             title="Categorias"
-            icon="📊"
+            icon="�"
             onPress={() => navigation.navigate('Categories')}
           />
         </View>
