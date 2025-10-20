@@ -56,6 +56,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             onPress={() => navigation.navigate('MonthlySpendingLimits')}
           />
           <MenuButton
+            title="Extrato Mensal"
+            icon="📑"
+            onPress={() => navigation.navigate('MonthlyStatement')}
+          />
+          <MenuButton
             title="Transações"
             icon="💰"
             onPress={() => navigation.navigate('Transactions')}

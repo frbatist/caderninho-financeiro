@@ -12,6 +12,7 @@ export type RootStackParamList = {
   AddMonthlyEntry: undefined;
   MonthlySpendingLimits: undefined;
   AddMonthlySpendingLimit: undefined;
+  MonthlyStatement: undefined;
   Transactions: undefined;
   TransactionDetail: { transactionId: number };
   AddTransaction: undefined;

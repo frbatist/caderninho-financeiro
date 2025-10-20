@@ -170,6 +170,37 @@ export interface CreateMonthlySpendingLimitDto {
   year: number;
 }
 
+// DTOs para MonthlyStatement
+export interface MonthlyStatementDto {
+  totalExpenses: number;
+  totalLimits: number;
+  totalBalance: number;
+  isOverLimit: boolean;
+  overLimitPercentage: number;
+  expensesByType: ExpenseByTypeDto[];
+}
+
+export interface ExpenseByTypeDto {
+  establishmentType: EstablishmentType;
+  establishmentTypeName: string;
+  totalAmount: number;
+  limit: number;
+  balance: number;
+  isOverLimit: boolean;
+  overLimitPercentage: number;
+  transactions: StatementTransactionDto[];
+}
+
+export interface StatementTransactionDto {
+  description: string;
+  amount: number;
+  date: string;
+  paymentType: PaymentType;
+  paymentTypeName: string;
+  isInstallment: boolean;
+  installmentInfo?: string;
+}
+
 // Resposta paginada
 export interface PagedResponse<T> {
   items: T[];
@@ -387,6 +418,17 @@ export class MonthlySpendingLimitsService {
   }
 }
 
+/**
+ * Serviços para Extrato Mensal
+ */
+export class MonthlyStatementService {
+  static async getMonthlyStatement(year: number, month: number): Promise<MonthlyStatementDto> {
+    const params: Record<string, any> = { year, month };
+    const url = apiService.buildUrlWithParams(API_ENDPOINTS.MONTHLY_STATEMENT, params);
+    return apiService.get<MonthlyStatementDto>(url);
+  }
+}
+
 // Export default com todos os serviços
 const CaderninhoApiService = {
   users: UsersService,
@@ -395,6 +437,7 @@ const CaderninhoApiService = {
   establishments: EstablishmentsService,
   monthlyEntries: MonthlyEntriesService,
   monthlySpendingLimits: MonthlySpendingLimitsService,
+  monthlyStatement: MonthlyStatementService,
 };
 
 export default CaderninhoApiService;

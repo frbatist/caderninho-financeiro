@@ -16,6 +16,7 @@ import MonthlyEntriesScreen from '../screens/MonthlyEntriesScreen';
 import AddMonthlyEntryScreen from '../screens/AddMonthlyEntryScreen';
 import MonthlySpendingLimitsScreen from '../screens/MonthlySpendingLimitsScreen';
 import AddMonthlySpendingLimitScreen from '../screens/AddMonthlySpendingLimitScreen';
+import MonthlyStatementScreen from '../screens/MonthlyStatementScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -68,6 +69,11 @@ export default function Navigation() {
           name="AddMonthlySpendingLimit" 
           component={AddMonthlySpendingLimitScreen}
           options={{ title: 'Novo Limite de Gasto' }}
+        />
+        <Stack.Screen 
+          name="MonthlyStatement" 
+          component={MonthlyStatementScreen}
+          options={{ title: 'Extrato Mensal' }}
         />
         {/* Adicione mais telas aqui conforme desenvolver */}
       </Stack.Navigator>
