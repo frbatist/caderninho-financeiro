@@ -208,8 +208,30 @@ public class CreateEntityDto
 
 #### 2. **Filter Requests** (`Request/`)
 - Criar objetos de filtro para endpoints GET com paginação
-- Propriedades padrão: `PageNumber`, `PageSize`, `SearchText`
+- Propriedades padrão: `PageNumber`, `PageSize`, `SearchText` (herdadas de `BaseFilterRequest`)
+- Adicionar propriedades específicas conforme necessário
+- Usar tipos nullable (`?`) para filtros opcionais
 - Exemplo: `EntityFilterRequest`
+
+```csharp
+public class MonthlyEntryFilterRequest : BaseFilterRequest
+{
+    /// <summary>
+    /// Filtro por mês (1-12)
+    /// </summary>
+    public int? Month { get; set; }
+
+    /// <summary>
+    /// Filtro por ano
+    /// </summary>
+    public int? Year { get; set; }
+
+    /// <summary>
+    /// Filtro por status ativo/inativo
+    /// </summary>
+    public bool? IsActive { get; set; }
+}
+```
 
 #### 3. **Paged Response** (`Request/PagedResponse.cs`)
 - Usar a classe genérica `PagedResponse<T>` para respostas paginadas
@@ -217,22 +239,28 @@ public class CreateEntityDto
 
 #### 4. **Service Interface** (`Domain/Abstractions/ApplicationServices/`)
 - Definir interface para operações de negócio
+- Apenas operações de escrita (Create, Update, Delete, etc.)
 - Exemplo: `IEntityService`
+- Nomenclatura de métodos: `CreateAsync`, `UpdateAsync`, `DeleteAsync`, `ToggleActiveAsync`
 
 #### 5. **Service Implementation** (`Application/Services/`)
 - Implementar a interface
 - Injetar `ApplicationDbContext` e `ILogger`
 - Fazer log de operações importantes
+- Incluir logs de warning para operações que falharam (ex: entidade não encontrada)
 - Exemplo: `EntityService`
 
 #### 6. **Controller** (`Controllers/`)
-- Injetar `ApplicationDbContext` (para queries) e `IEntityService` (para comandos)
+- Injetar `ApplicationDbContext` (para queries GET) e `IEntityService` (para comandos POST/PUT/DELETE/PATCH)
+- **GETs ficam no Controller** com acesso direto ao DbContext
+- **Comandos (POST/PUT/DELETE/PATCH) usam o Service**
 - Endpoints padrão:
-  - **GET /api/entities** - Lista paginada com filtro
-  - **GET /api/entities/{id}** - Busca por ID
-  - **POST /api/entities** - Criação
-  - **PUT /api/entities/{id}** - Atualização (quando necessário)
-  - **DELETE /api/entities/{id}** - Exclusão lógica (quando necessário)
+  - **GET /api/entities** - Lista paginada com filtro (direto no controller)
+  - **GET /api/entities/{id}** - Busca por ID (direto no controller)
+  - **POST /api/entities** - Criação (via service)
+  - **PUT /api/entities/{id}** - Atualização (via service)
+  - **DELETE /api/entities/{id}** - Exclusão (via service)
+  - **PATCH /api/entities/{id}/toggle-active** - Toggle status (via service, quando aplicável)
 
 #### 7. **Registro de Serviços** (`Program.cs`)
 - Registrar serviços com `AddScoped<IEntityService, EntityService>()`
@@ -250,7 +278,9 @@ public class CreateCardDto
 // 2. Interface
 public interface ICardService
 {
-    Task<Card> AddAsync(CreateCardDto dto);
+    Task<Card> CreateAsync(CreateCardDto dto);
+    Task<Card?> UpdateAsync(int id, CreateCardDto dto);
+    Task<bool> DeleteAsync(int id);
 }
 
 // 3. Service
@@ -259,13 +289,44 @@ public class CardService : ICardService
     private readonly ApplicationDbContext _context;
     private readonly ILogger<CardService> _logger;
     
-    public async Task<Card> AddAsync(CreateCardDto dto)
+    public async Task<Card> CreateAsync(CreateCardDto dto)
     {
         var card = new Card { Name = dto.Name };
         _context.Cards.Add(card);
         await _context.SaveChangesAsync();
         _logger.LogInformation("Cartão criado: {CardId}", card.Id);
         return card;
+    }
+    
+    public async Task<Card?> UpdateAsync(int id, CreateCardDto dto)
+    {
+        var card = await _context.Cards.FindAsync(id);
+        if (card == null)
+        {
+            _logger.LogWarning("Tentativa de atualizar cartão não encontrado: {CardId}", id);
+            return null;
+        }
+        
+        card.Name = dto.Name;
+        card.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Cartão atualizado: {CardId}", id);
+        return card;
+    }
+    
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var card = await _context.Cards.FindAsync(id);
+        if (card == null)
+        {
+            _logger.LogWarning("Tentativa de deletar cartão não encontrado: {CardId}", id);
+            return false;
+        }
+        
+        _context.Cards.Remove(card);
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Cartão deletado: {CardId}", id);
+        return true;
     }
 }
 
@@ -276,22 +337,103 @@ public class CardsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly ICardService _cardService;
+    private readonly ILogger<CardsController> _logger;
+    
+    public CardsController(
+        ApplicationDbContext context,
+        ICardService cardService,
+        ILogger<CardsController> logger)
+    {
+        _context = context;
+        _cardService = cardService;
+        _logger = logger;
+    }
     
     [HttpGet]
     public async Task<ActionResult<PagedResponse<Card>>> GetAll([FromQuery] CardFilterRequest filter)
     {
-        // Implementação com paginação
+        // GET direto no controller com DbContext
+        var query = _context.Cards.AsQueryable();
+        
+        // Aplicar filtros opcionais
+        if (!string.IsNullOrWhiteSpace(filter.SearchText))
+        {
+            query = query.Where(c => c.Name.Contains(filter.SearchText));
+        }
+        
+        // Exemplo: se tiver filtros específicos
+        // if (filter.IsActive.HasValue)
+        // {
+        //     query = query.Where(c => c.IsActive == filter.IsActive.Value);
+        // }
+        
+        var totalItems = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(c => c.CreatedAt)
+            .Skip((filter.PageNumber - 1) * filter.PageSize)
+            .Take(filter.PageSize)
+            .ToListAsync();
+            
+        return Ok(new PagedResponse<Card>
+        {
+            Items = items,
+            PageNumber = filter.PageNumber,
+            PageSize = filter.PageSize,
+            TotalItems = totalItems,
+            TotalPages = (int)Math.Ceiling(totalItems / (double)filter.PageSize)
+        });
+    }
+    
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Card>> GetById(int id)
+    {
+        // GET direto no controller com DbContext
+        var card = await _context.Cards.FindAsync(id);
+        if (card == null) return NotFound();
+        return Ok(card);
     }
     
     [HttpPost]
     public async Task<ActionResult<Card>> Create([FromBody] CreateCardDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        var card = await _cardService.AddAsync(dto);
+        
+        // POST usa o service
+        var card = await _cardService.CreateAsync(dto);
         return CreatedAtAction(nameof(GetById), new { id = card.Id }, card);
     }
+    
+    [HttpPut("{id}")]
+    public async Task<ActionResult<Card>> Update(int id, [FromBody] CreateCardDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        
+        // PUT usa o service
+        var card = await _cardService.UpdateAsync(id, dto);
+        if (card == null) return NotFound();
+        return Ok(card);
+    }
+    
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        // DELETE usa o service
+        var deleted = await _cardService.DeleteAsync(id);
+        if (!deleted) return NotFound();
+        return NoContent();
+    }
 }
+
+// 5. Registro no Program.cs
+builder.Services.AddScoped<ICardService, CardService>();
 ```
+
+### Princípios Importantes
+- **Separação de responsabilidades**: GETs no controller (queries), comandos no service (writes)
+- **Services retornam entidades ou null**: Deixar o controller tratar NotFound
+- **Services retornam bool para deletes**: Indicar sucesso/falha
+- **Logging**: Todas as operações devem ter logs apropriados
+- **Validação**: ModelState no controller, validações de negócio no service
 
 ## Próximos Passos
 - Implementar autentica��o e autoriza��o

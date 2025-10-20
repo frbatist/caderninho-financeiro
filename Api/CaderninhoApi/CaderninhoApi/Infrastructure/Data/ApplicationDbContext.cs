@@ -32,6 +32,11 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<Expense> Expenses { get; set; } = null!;
 
+    /// <summary>
+    /// DbSet para a entidade MonthlyEntry
+    /// </summary>
+    public DbSet<MonthlyEntry> MonthlyEntries { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -26,6 +26,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<IEstablishmentService, EstablishmentService>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
+builder.Services.AddScoped<IMonthlyEntryService, MonthlyEntryService>();
 
 // Configuração do Entity Framework com SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
