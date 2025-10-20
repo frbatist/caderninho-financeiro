@@ -59,6 +59,7 @@ export default function EstablishmentDropdown({
   disabled = false,
 }: EstablishmentDropdownProps) {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Função para buscar estabelecimentos com paginação
   const fetchEstablishments = async (searchText: string, pageNumber: number) => {
@@ -110,12 +111,16 @@ export default function EstablishmentDropdown({
   };
 
   const handleEstablishmentAdded = (newEstablishment: Establishment) => {
-    onSelectEstablishment(newEstablishment); // Seleciona automaticamente o novo estabelecimento
+    // Incrementar refreshKey para forçar reload do dropdown
+    setRefreshKey(prev => prev + 1);
+    // Selecionar automaticamente o novo estabelecimento
+    onSelectEstablishment(newEstablishment);
   };
 
   return (
     <>
       <SearchableDropdown<Establishment>
+        key={refreshKey} // Forçar remount quando refreshKey mudar
         selectedItem={selectedEstablishment}
         onSelectItem={onSelectEstablishment}
         fetchData={fetchEstablishments}
@@ -129,12 +134,14 @@ export default function EstablishmentDropdown({
         onAddNew={handleAddNew}
         style={style}
         disabled={disabled}
+        keepOpenAfterAdd={true}
       />
 
       <AddEstablishmentModal
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
         onEstablishmentAdded={handleEstablishmentAdded}
+        keepDropdownOpen={true}
       />
     </>
   );

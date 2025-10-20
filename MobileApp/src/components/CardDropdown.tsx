@@ -49,6 +49,7 @@ export default function CardDropdown({
   disabled = false,
 }: CardDropdownProps) {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Função para buscar cartões com paginação
   const fetchCards = async (searchText: string, pageNumber: number) => {
@@ -93,12 +94,16 @@ export default function CardDropdown({
   };
 
   const handleCardAdded = (newCard: Card) => {
-    onSelectCard(newCard); // Seleciona automaticamente o novo cartão
+    // Incrementar refreshKey para forçar reload do dropdown
+    setRefreshKey(prev => prev + 1);
+    // Selecionar automaticamente o novo cartão
+    onSelectCard(newCard);
   };
 
   return (
     <>
       <SearchableDropdown<Card>
+        key={refreshKey} // Forçar remount quando refreshKey mudar
         selectedItem={selectedCard}
         onSelectItem={onSelectCard}
         fetchData={fetchCards}
@@ -112,6 +117,7 @@ export default function CardDropdown({
         onAddNew={handleAddNew}
         style={style}
         disabled={disabled}
+        keepOpenAfterAdd={true}
       />
 
       <AddCardModal

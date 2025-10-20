@@ -21,6 +21,7 @@ interface AddEstablishmentModalProps {
   visible: boolean;
   onClose: () => void;
   onEstablishmentAdded: (establishment: Establishment) => void;
+  keepDropdownOpen?: boolean; // Nova prop para controlar se mantém dropdown aberto
 }
 
 // Opções para os tipos de estabelecimento com ícones
@@ -42,7 +43,8 @@ const establishmentTypeOptions = [
 export default function AddEstablishmentModal({ 
   visible, 
   onClose, 
-  onEstablishmentAdded 
+  onEstablishmentAdded,
+  keepDropdownOpen = false 
 }: AddEstablishmentModalProps) {
   // Estados do formulário
   const [formData, setFormData] = useState<CreateEstablishmentDto>({
@@ -91,19 +93,21 @@ export default function AddEstablishmentModal({
         name: formData.name.trim(),
       });
       
-      Alert.alert(
-        'Sucesso',
-        'Estabelecimento adicionado com sucesso!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              onEstablishmentAdded(newEstablishment);
-              handleClose();
-            },
-          },
-        ]
-      );
+      // Limpar formulário e fechar modal
+      setFormData({
+        name: '',
+        type: EstablishmentType.Restaurant,
+      });
+      setErrors({});
+      onClose();
+      
+      // Notificar sucesso e callback para selecionar o novo estabelecimento
+      onEstablishmentAdded(newEstablishment);
+      
+      // Mostrar toast de sucesso (não bloqueia a UI)
+      if (!keepDropdownOpen) {
+        Alert.alert('Sucesso', 'Estabelecimento adicionado com sucesso!');
+      }
     } catch (error) {
       console.error('Erro ao criar estabelecimento:', error);
       Alert.alert('Erro', 'Não foi possível adicionar o estabelecimento. Tente novamente.');

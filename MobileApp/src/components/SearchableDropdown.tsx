@@ -38,9 +38,11 @@ export interface SearchableDropdownProps<T> {
   searchPlaceholder?: string;
   emptyMessage?: string;
   addNewText?: string;
+  keepOpenAfterAdd?: boolean; // Manter dropdown aberto após adicionar novo item
   
   // Eventos
   onAddNew?: () => void;
+  onItemAdded?: () => void; // Callback após item ser adicionado
   
   // Estilo
   style?: any;
@@ -58,7 +60,9 @@ export default function SearchableDropdown<T>({
   searchPlaceholder = 'Digite para buscar...',
   emptyMessage = 'Nenhum item encontrado',
   addNewText = 'Adicionar novo',
+  keepOpenAfterAdd = false,
   onAddNew,
+  onItemAdded,
   style,
   disabled = false,
 }: SearchableDropdownProps<T>) {
@@ -125,6 +129,22 @@ export default function SearchableDropdown<T>({
     return () => clearTimeout(timeoutId);
   }, [searchText, isVisible, loadItems]);
 
+  // Recarregar dados quando selectedItem mudar e dropdown estiver aberto (keepOpenAfterAdd)
+  useEffect(() => {
+    if (isVisible && keepOpenAfterAdd && selectedItem) {
+      // Pequeno delay para garantir que o item foi salvo no backend
+      const timeoutId = setTimeout(() => {
+        setSearchText('');
+        setItems([]);
+        setCurrentPage(1);
+        setHasMore(true);
+        loadItems('', 1);
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [selectedItem, isVisible, keepOpenAfterAdd, loadItems]);
+
   // Carregar mais itens
   const loadMoreItems = () => {
     if (hasMore && !loadingMore && !loading) {
@@ -167,7 +187,9 @@ export default function SearchableDropdown<T>({
           <TouchableOpacity
             style={styles.addNewButton}
             onPress={() => {
-              setIsVisible(false);
+              if (!keepOpenAfterAdd) {
+                setIsVisible(false);
+              }
               onAddNew();
             }}
           >
