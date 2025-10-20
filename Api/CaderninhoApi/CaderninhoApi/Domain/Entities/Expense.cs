@@ -11,6 +11,18 @@ public class Expense : BaseEntity
     private int? _cardId;
 
     /// <summary>
+    /// ID do usuário que adicionou a despesa
+    /// </summary>
+    [Display(Name = "Usuário")]
+    [Required(ErrorMessage = "O usuário é obrigatório")]
+    public int UserId { get; set; }
+
+    /// <summary>
+    /// Usuário que adicionou a despesa
+    /// </summary>
+    public User User { get; set; } = null!;
+
+    /// <summary>
     /// Descrição da despesa
     /// </summary>
     [Display(Name = "Descrição")]

@@ -22,6 +22,9 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
             .ValueGeneratedOnAdd()
             .IsRequired();
 
+        builder.Property(e => e.UserId)
+            .IsRequired();
+
         builder.Property(e => e.Description)
             .HasMaxLength(500)
             .IsRequired();
@@ -54,6 +57,11 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
             .IsRequired();
 
         // Relacionamentos
+        builder.HasOne(e => e.User)
+            .WithMany()
+            .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(e => e.Establishment)
             .WithMany()
             .HasForeignKey(e => e.EstablishmentId)
@@ -66,6 +74,7 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
             .IsRequired(false);
 
         // Índices
+        builder.HasIndex(e => e.UserId);
         builder.HasIndex(e => e.EstablishmentId);
         builder.HasIndex(e => e.PaymentType);
         builder.HasIndex(e => e.CardId);

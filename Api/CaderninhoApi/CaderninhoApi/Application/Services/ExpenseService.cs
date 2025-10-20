@@ -36,6 +36,13 @@ public class ExpenseService : IExpenseService
     {
         try
         {
+            // Validar se o usuário existe
+            var userExists = await _context.Users.AnyAsync(u => u.Id == dto.UserId);
+            if (!userExists)
+            {
+                throw new InvalidOperationException("Usuário não encontrado");
+            }
+
             // Validar se o estabelecimento existe
             var establishmentExists = await _context.Establishments
                 .AnyAsync(e => e.Id == dto.EstablishmentId);
@@ -62,6 +69,7 @@ public class ExpenseService : IExpenseService
 
             var expense = new Expense
             {
+                UserId = dto.UserId,
                 Description = dto.Description,
                 EstablishmentId = dto.EstablishmentId,
                 PaymentType = dto.PaymentType,

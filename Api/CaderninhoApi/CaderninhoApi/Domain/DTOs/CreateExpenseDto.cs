@@ -9,6 +9,13 @@ namespace CaderninhoApi.Domain.DTOs;
 public class CreateExpenseDto
 {
     /// <summary>
+    /// ID do usuário que está adicionando a despesa
+    /// </summary>
+    [Required(ErrorMessage = "O usuário é obrigatório")]
+    [Display(Name = "Usuário")]
+    public int UserId { get; set; }
+
+    /// <summary>
     /// Descrição da despesa
     /// </summary>
     [Required(ErrorMessage = "A descrição é obrigatória")]
