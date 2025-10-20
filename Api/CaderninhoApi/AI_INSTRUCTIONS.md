@@ -95,6 +95,50 @@ public class ExpenseService : IExpenseService
   - **Mappings**: Configura��es do Entity Framework (Fluent API)
   - **External**: Integra��es com APIs externas
   - **Migrations**: Migra��es do banco de dados
+  - **Helpers**: Utilit�rios e extens�es (ex: `EnumHelper`)
+
+#### EnumHelper
+- **Localiza��o**: `/Infrastructure/Helpers/EnumHelper.cs`
+- **Prop�sito**: Obter nomes de exibi��o de enums usando Reflection
+- **Funcionamento**: L� o atributo `[Display(Name = "...")]` dos valores de enum
+- **Uso**: Chamar `.GetDisplayName()` em qualquer valor de enum
+- **Benef�cios**:
+  - **DRY (Don't Repeat Yourself)**: Evita duplica��o de switch cases para cada enum
+  - **Manuten��o**: Novos valores de enum funcionam automaticamente sem c�digo adicional
+  - **Consist�ncia**: Centraliza a l�gica de obten��o de nomes de exibi��o
+  - **Performance**: Usa Reflection de forma eficiente com fallback para `ToString()`
+- **Exemplo**:
+```csharp
+// Enum com Display attributes
+public enum PaymentType
+{
+    [Display(Name = "D�bito")]
+    Debit = 1,
+    
+    [Display(Name = "Cr�dito")]
+    CreditCard = 2,
+    
+    [Display(Name = "Pix")]
+    Pix = 3
+}
+
+// Uso do EnumHelper
+var paymentType = PaymentType.CreditCard;
+var displayName = paymentType.GetDisplayName(); // Retorna "Cr�dito"
+
+// Em vez de:
+private string GetPaymentTypeName(PaymentType type)
+{
+    return type switch
+    {
+        PaymentType.Debit => "D�bito",
+        PaymentType.CreditCard => "Cr�dito",
+        PaymentType.Pix => "Pix",
+        _ => type.ToString()
+    };
+}
+```
+- **IMPORTANTE**: SEMPRE use `.GetDisplayName()` em vez de criar switch cases para enums com `[Display]` attributes
 
 ## Padr�es e Conven��es
 

@@ -30,6 +30,7 @@ builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IMonthlyEntryService, MonthlyEntryService>();
 builder.Services.AddScoped<IMonthlySpendingLimitService, MonthlySpendingLimitService>();
+builder.Services.AddScoped<IMonthlyStatementService, MonthlyStatementService>();
 
 // Registrar domain services
 builder.Services.AddScoped<ICreditCardInstallmentDomainService, CreditCardInstallmentDomainService>();
