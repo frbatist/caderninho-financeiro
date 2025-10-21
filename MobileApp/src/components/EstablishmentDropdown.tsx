@@ -8,7 +8,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import SearchableDropdown from './SearchableDropdown';
 import AddEstablishmentModal from './AddEstablishmentModal';
 import CaderninhoApiService, { Establishment } from '../services/caderninhoApiService';
-import { EstablishmentType } from '../types/establishmentType';
+import { EstablishmentType, getEstablishmentTypeInfo } from '../types/establishmentType';
 
 interface EstablishmentDropdownProps {
   selectedEstablishment?: Establishment | null;
@@ -18,44 +18,6 @@ interface EstablishmentDropdownProps {
   style?: any;
   disabled?: boolean;
 }
-
-// Função para converter enum para texto legível e ícone
-const getEstablishmentTypeInfo = (type: EstablishmentType): { text: string; icon: string; color: string } => {
-  switch (type) {
-    case EstablishmentType.Supermarket:
-      return { text: 'Mercado', icon: '🛒', color: '#4CAF50' };
-    case EstablishmentType.ClothingStore:
-      return { text: 'Loja de Roupas', icon: '�', color: '#E91E63' };
-    case EstablishmentType.GasStation:
-      return { text: 'Posto de Combustível', icon: '⛽', color: '#FF9800' };
-    case EstablishmentType.OnlineService:
-      return { text: 'Serviço Online', icon: '�', color: '#795548' };
-    case EstablishmentType.Games:
-      return { text: 'Games', icon: '🎮', color: '#9C27B0' };
-    case EstablishmentType.DepartmentStore:
-      return { text: 'Loja de Departamentos', icon: '🏬', color: '#607D8B' };
-    case EstablishmentType.Restaurant:
-      return { text: 'Restaurante', icon: '🍽️', color: '#FF6B35' };
-    case EstablishmentType.Delivery:
-      return { text: 'Delivery', icon: '�', color: '#FF5722' };
-    case EstablishmentType.Charity:
-      return { text: 'Caridade', icon: '❤️', color: '#E91E63' };
-    case EstablishmentType.Church:
-      return { text: 'Igreja', icon: '⛪', color: '#3F51B5' };
-    case EstablishmentType.Events:
-      return { text: 'Eventos', icon: '�', color: '#FF9800' };
-    case EstablishmentType.Entertainment:
-      return { text: 'Lazer', icon: '🎬', color: '#FF5722' };
-    case EstablishmentType.Pharmacy:
-      return { text: 'Farmácia', icon: '💊', color: '#2196F3' };
-    case EstablishmentType.Health:
-      return { text: 'Saúde', icon: '🏥', color: '#F44336' };
-    case EstablishmentType.Other:
-      return { text: 'Outros', icon: '🏪', color: '#757575' };
-    default:
-      return { text: 'Desconhecido', icon: '❓', color: '#757575' };
-  }
-};
 
 export default function EstablishmentDropdown({
   selectedEstablishment,

@@ -22,7 +22,7 @@ import CaderninhoApiService, {
   MonthlySpendingLimit, 
   MonthlySpendingLimitFilterRequest
 } from '../services/caderninhoApiService';
-import { EstablishmentType } from '../types/establishmentType';
+import { EstablishmentType, getEstablishmentTypeIcon, getEstablishmentTypeName } from '../types/establishmentType';
 
 type MonthlySpendingLimitsScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'MonthlySpendingLimits'>;
@@ -68,16 +68,16 @@ const statusOptions = [
 const establishmentTypeOptions = [
   { value: undefined, label: 'Todos' },
   { value: EstablishmentType.Supermarket, label: '🛒 Mercado' },
-  { value: EstablishmentType.ClothingStore, label: '� Loja de Roupas' },
+  { value: EstablishmentType.ClothingStore, label: '👗 Loja de Roupas' },
   { value: EstablishmentType.GasStation, label: '⛽ Posto de Combustível' },
-  { value: EstablishmentType.OnlineService, label: '💻 Serviço Online' },
+  { value: EstablishmentType.OnlineService, label: '📺 Serviço Online' },
   { value: EstablishmentType.Games, label: '🎮 Games' },
   { value: EstablishmentType.DepartmentStore, label: '🏬 Loja de Departamentos' },
   { value: EstablishmentType.Restaurant, label: '🍽️ Restaurante' },
-  { value: EstablishmentType.Delivery, label: '� Delivery' },
+  { value: EstablishmentType.Delivery, label: '🏍️ Delivery' },
   { value: EstablishmentType.Charity, label: '❤️ Caridade' },
   { value: EstablishmentType.Church, label: '⛪ Igreja' },
-  { value: EstablishmentType.Events, label: '� Eventos' },
+  { value: EstablishmentType.Events, label: '🎵 Eventos' },
   { value: EstablishmentType.Entertainment, label: '🎬 Lazer' },
   { value: EstablishmentType.Pharmacy, label: '💊 Farmácia' },
   { value: EstablishmentType.Health, label: '🏥 Saúde' },
