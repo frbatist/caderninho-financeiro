@@ -15,7 +15,8 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import CaderninhoApiService, { CreateEstablishmentDto, Establishment, EstablishmentType } from '../services/caderninhoApiService';
+import CaderninhoApiService, { CreateEstablishmentDto, Establishment } from '../services/caderninhoApiService';
+import { EstablishmentType } from '../types/establishmentType';
 
 interface AddEstablishmentModalProps {
   visible: boolean;
@@ -26,17 +27,20 @@ interface AddEstablishmentModalProps {
 
 // Opções para os tipos de estabelecimento com ícones
 const establishmentTypeOptions = [
+  { value: EstablishmentType.Supermarket, label: 'Mercado', icon: '🛒' },
+  { value: EstablishmentType.ClothingStore, label: 'Loja de Roupas', icon: '�' },
+  { value: EstablishmentType.GasStation, label: 'Posto de Combustível', icon: '⛽' },
+  { value: EstablishmentType.OnlineService, label: 'Serviço Online', icon: '�' },
+  { value: EstablishmentType.Games, label: 'Games', icon: '🎮' },
+  { value: EstablishmentType.DepartmentStore, label: 'Loja de Departamentos', icon: '🏬' },
   { value: EstablishmentType.Restaurant, label: 'Restaurante', icon: '🍽️' },
-  { value: EstablishmentType.Supermarket, label: 'Supermercado', icon: '🛒' },
-  { value: EstablishmentType.GasStation, label: 'Posto de Gasolina', icon: '⛽' },
+  { value: EstablishmentType.Delivery, label: 'Delivery', icon: '�' },
+  { value: EstablishmentType.Charity, label: 'Caridade', icon: '❤️' },
+  { value: EstablishmentType.Church, label: 'Igreja', icon: '⛪' },
+  { value: EstablishmentType.Events, label: 'Eventos', icon: '�' },
+  { value: EstablishmentType.Entertainment, label: 'Lazer', icon: '🎬' },
   { value: EstablishmentType.Pharmacy, label: 'Farmácia', icon: '💊' },
-  { value: EstablishmentType.Clothing, label: 'Roupas', icon: '👕' },
-  { value: EstablishmentType.Electronics, label: 'Eletrônicos', icon: '📱' },
-  { value: EstablishmentType.Services, label: 'Serviços', icon: '🔧' },
-  { value: EstablishmentType.Education, label: 'Educação', icon: '📚' },
   { value: EstablishmentType.Health, label: 'Saúde', icon: '🏥' },
-  { value: EstablishmentType.Entertainment, label: 'Entretenimento', icon: '🎬' },
-  { value: EstablishmentType.Transport, label: 'Transporte', icon: '🚗' },
   { value: EstablishmentType.Other, label: 'Outros', icon: '🏪' },
 ];
 

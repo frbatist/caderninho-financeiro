@@ -156,6 +156,18 @@ MobileApp/
 
 ## 🐛 Troubleshooting
 
+### Timeout nas requisições
+
+Se as requisições estão sendo canceladas durante debug:
+
+1. O timeout padrão está configurado para **60 segundos** em `src/constants/api.ts`
+2. Para aumentar ainda mais (útil para debug com breakpoints):
+   ```typescript
+   // Em src/constants/api.ts
+   export const API_TIMEOUT = 120000; // 2 minutos
+   ```
+3. Reinicie o app após alterar o timeout
+
 ### Erro de conexão com a API
 
 1. Verifique se a API está rodando

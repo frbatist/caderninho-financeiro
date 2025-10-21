@@ -26,7 +26,7 @@ export default function MonthlyStatementScreen() {
   // Estados
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [activeTab, setActiveTab] = useState<'entries' | 'statement'>('entries');
+  const [activeTab, setActiveTab] = useState<'entries' | 'statement'>('statement');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -295,16 +295,16 @@ export default function MonthlyStatementScreen() {
             <Text
               style={[
                 styles.summaryValueTotal,
-                monthlyStatement.totalBalance >= 0 ? styles.incomeText : styles.expenseText
+                monthlyStatement.availableBalance >= 0 ? styles.incomeText : styles.expenseText
               ]}
             >
-              {formatCurrency(monthlyStatement.totalBalance)}
+              {formatCurrency(monthlyStatement.availableBalance)}
             </Text>
           </View>
-          {monthlyStatement.isOverLimit && (
+          {monthlyStatement.availableBalance < 0 && (
             <View style={styles.overLimitWarning}>
               <Text style={styles.overLimitText}>
-                ⚠️ Acima do limite em {monthlyStatement.overLimitPercentage.toFixed(1)}%
+                ⚠️ Acima do limite em {monthlyStatement.percentageUsed.toFixed(1)}%
               </Text>
             </View>
           )}
@@ -329,25 +329,27 @@ export default function MonthlyStatementScreen() {
                       {expenseType.establishmentTypeName}
                     </Text>
                     <Text style={styles.expenseTypeAmount}>
-                      {formatCurrency(expenseType.totalAmount)}
+                      {formatCurrency(expenseType.totalSpent)}
                     </Text>
                   </View>
                   <View style={styles.expenseTypeDetails}>
                     <Text style={styles.expenseTypeLimit}>
-                      Limite: {formatCurrency(expenseType.limit)}
+                      Limite: {expenseType.monthlyLimit !== null ? formatCurrency(expenseType.monthlyLimit) : 'Não definido'}
                     </Text>
-                    <Text
-                      style={[
-                        styles.expenseTypeBalance,
-                        expenseType.balance >= 0 ? styles.incomeText : styles.expenseText
-                      ]}
-                    >
-                      Saldo: {formatCurrency(expenseType.balance)}
-                    </Text>
+                    {expenseType.availableBalance !== null && (
+                      <Text
+                        style={[
+                          styles.expenseTypeBalance,
+                          expenseType.availableBalance >= 0 ? styles.incomeText : styles.expenseText
+                        ]}
+                      >
+                        Saldo: {formatCurrency(expenseType.availableBalance)}
+                      </Text>
+                    )}
                   </View>
-                  {expenseType.isOverLimit && (
+                  {expenseType.isOverLimit && expenseType.percentageUsed !== null && (
                     <Text style={styles.expenseTypeOverLimit}>
-                      ⚠️ {expenseType.overLimitPercentage.toFixed(1)}% acima
+                      ⚠️ {expenseType.percentageUsed.toFixed(1)}% acima
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -373,7 +375,7 @@ export default function MonthlyStatementScreen() {
                             {transaction.paymentTypeName}
                           </Text>
                         </View>
-                        {transaction.isInstallment && transaction.installmentInfo && (
+                        {transaction.isCreditCardInstallment && transaction.installmentInfo && (
                           <Text style={styles.transactionInstallment}>
                             🔢 {transaction.installmentInfo}
                           </Text>

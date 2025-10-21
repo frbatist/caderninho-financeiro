@@ -5,6 +5,7 @@
 
 import apiService from './apiService';
 import { API_ENDPOINTS } from '../constants/api';
+import { EstablishmentType } from '../types/establishmentType';
 
 // Tipos baseados na API .NET
 export interface User {
@@ -98,21 +99,6 @@ export enum PaymentType {
   BankSlip = 6
 }
 
-export enum EstablishmentType {
-  Restaurant = 0,
-  Supermarket = 1,
-  GasStation = 2,
-  Pharmacy = 3,
-  Clothing = 4,
-  Electronics = 5,
-  Services = 6,
-  Education = 7,
-  Health = 8,
-  Entertainment = 9,
-  Transport = 10,
-  Other = 11
-}
-
 export enum MonthlyEntryType {
   Salary = 1,
   Tax = 2,
@@ -173,33 +159,38 @@ export interface CreateMonthlySpendingLimitDto {
 
 // DTOs para MonthlyStatement
 export interface MonthlyStatementDto {
+  year: number;
+  month: number;
+  expensesByType: ExpenseByTypeDto[];
   totalExpenses: number;
   totalLimits: number;
-  totalBalance: number;
-  isOverLimit: boolean;
-  overLimitPercentage: number;
-  expensesByType: ExpenseByTypeDto[];
+  availableBalance: number;
+  percentageUsed: number;
 }
 
 export interface ExpenseByTypeDto {
   establishmentType: EstablishmentType;
   establishmentTypeName: string;
-  totalAmount: number;
-  limit: number;
-  balance: number;
+  monthlyLimit: number | null;
+  totalSpent: number;
+  availableBalance: number | null;
+  percentageUsed: number | null;
   isOverLimit: boolean;
-  overLimitPercentage: number;
   transactions: StatementTransactionDto[];
 }
 
 export interface StatementTransactionDto {
+  expenseId: number;
   description: string;
-  amount: number;
+  establishmentName: string;
   date: string;
+  amount: number;
   paymentType: PaymentType;
   paymentTypeName: string;
-  isInstallment: boolean;
-  installmentInfo?: string;
+  cardName?: string | null;
+  installmentInfo?: string | null;
+  isCreditCardInstallment: boolean;
+  dueDate?: string | null;
 }
 
 // Resposta paginada

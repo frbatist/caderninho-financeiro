@@ -7,7 +7,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import SearchableDropdown from './SearchableDropdown';
 import AddEstablishmentModal from './AddEstablishmentModal';
-import CaderninhoApiService, { Establishment, EstablishmentType } from '../services/caderninhoApiService';
+import CaderninhoApiService, { Establishment } from '../services/caderninhoApiService';
+import { EstablishmentType } from '../types/establishmentType';
 
 interface EstablishmentDropdownProps {
   selectedEstablishment?: Establishment | null;
@@ -21,28 +22,34 @@ interface EstablishmentDropdownProps {
 // Função para converter enum para texto legível e ícone
 const getEstablishmentTypeInfo = (type: EstablishmentType): { text: string; icon: string; color: string } => {
   switch (type) {
+    case EstablishmentType.Supermarket:
+      return { text: 'Mercado', icon: '🛒', color: '#4CAF50' };
+    case EstablishmentType.ClothingStore:
+      return { text: 'Loja de Roupas', icon: '�', color: '#E91E63' };
+    case EstablishmentType.GasStation:
+      return { text: 'Posto de Combustível', icon: '⛽', color: '#FF9800' };
+    case EstablishmentType.OnlineService:
+      return { text: 'Serviço Online', icon: '�', color: '#795548' };
+    case EstablishmentType.Games:
+      return { text: 'Games', icon: '🎮', color: '#9C27B0' };
+    case EstablishmentType.DepartmentStore:
+      return { text: 'Loja de Departamentos', icon: '🏬', color: '#607D8B' };
     case EstablishmentType.Restaurant:
       return { text: 'Restaurante', icon: '🍽️', color: '#FF6B35' };
-    case EstablishmentType.Supermarket:
-      return { text: 'Supermercado', icon: '🛒', color: '#4CAF50' };
-    case EstablishmentType.GasStation:
-      return { text: 'Posto de Gasolina', icon: '⛽', color: '#FF9800' };
+    case EstablishmentType.Delivery:
+      return { text: 'Delivery', icon: '�', color: '#FF5722' };
+    case EstablishmentType.Charity:
+      return { text: 'Caridade', icon: '❤️', color: '#E91E63' };
+    case EstablishmentType.Church:
+      return { text: 'Igreja', icon: '⛪', color: '#3F51B5' };
+    case EstablishmentType.Events:
+      return { text: 'Eventos', icon: '�', color: '#FF9800' };
+    case EstablishmentType.Entertainment:
+      return { text: 'Lazer', icon: '🎬', color: '#FF5722' };
     case EstablishmentType.Pharmacy:
       return { text: 'Farmácia', icon: '💊', color: '#2196F3' };
-    case EstablishmentType.Clothing:
-      return { text: 'Roupas', icon: '👕', color: '#E91E63' };
-    case EstablishmentType.Electronics:
-      return { text: 'Eletrônicos', icon: '📱', color: '#9C27B0' };
-    case EstablishmentType.Services:
-      return { text: 'Serviços', icon: '🔧', color: '#795548' };
-    case EstablishmentType.Education:
-      return { text: 'Educação', icon: '📚', color: '#3F51B5' };
     case EstablishmentType.Health:
       return { text: 'Saúde', icon: '🏥', color: '#F44336' };
-    case EstablishmentType.Entertainment:
-      return { text: 'Entretenimento', icon: '🎬', color: '#FF5722' };
-    case EstablishmentType.Transport:
-      return { text: 'Transporte', icon: '🚗', color: '#607D8B' };
     case EstablishmentType.Other:
       return { text: 'Outros', icon: '🏪', color: '#757575' };
     default:

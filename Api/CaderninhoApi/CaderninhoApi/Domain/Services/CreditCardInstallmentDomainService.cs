@@ -79,7 +79,7 @@ public class CreditCardInstallmentDomainService : ICreditCardInstallmentDomainSe
             var installment = new CreditCardInstallment
             {
                 CardId = expense.CardId.Value,
-                ExpenseId = expense.Id,
+                Expense = expense,
                 InstallmentNumber = i,
                 TotalInstallments = expense.InstallmentCount,
                 DueDate = dueDate,
@@ -95,8 +95,8 @@ public class CreditCardInstallmentDomainService : ICreditCardInstallmentDomainSe
         // Adicionar as parcelas ao contexto
         await _context.CreditCardInstallments.AddRangeAsync(installments, cancellationToken);
 
-        _logger.LogInformation("Criadas {Count} parcelas para a despesa {ExpenseId}", 
-            installments.Count, expense.Id);
+        _logger.LogInformation("Criadas {Count} parcelas para a despesa {ExpenseDescription} na data {ExpenseDate} ", 
+            installments.Count, expense.Description, expense.Date.ToString("dd/MM/yyyy"));
 
         return installments;
     }

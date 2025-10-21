@@ -17,6 +17,9 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
+console.log(`[API Config] Base URL: ${API_BASE_URL}`);
+console.log(`[API Config] Timeout: ${API_TIMEOUT}ms (${API_TIMEOUT / 1000}s)`);
+
 /**
  * Interceptor de requisições
  * Aqui você pode adicionar tokens de autenticação, logs, etc.
@@ -54,6 +57,9 @@ apiClient.interceptors.response.use(
     } else if (error.request) {
       // Erro de rede (sem resposta)
       console.error('[Network Error]', error.message);
+      if (error.code === 'ECONNABORTED') {
+        console.error('[Timeout] Request timed out after', API_TIMEOUT, 'ms');
+      }
     } else {
       // Erro ao configurar a requisição
       console.error('[Request Error]', error.message);

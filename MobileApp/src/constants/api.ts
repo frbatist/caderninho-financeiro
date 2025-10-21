@@ -10,7 +10,8 @@
 export const API_BASE_URL = 'http://localhost:5054/api';
 
 // Timeout para requisições (em milissegundos)
-export const API_TIMEOUT = 10000;
+// Aumentado para 60 segundos para facilitar debug
+export const API_TIMEOUT = 60000; // 60 segundos
 
 // Endpoints da API baseados nos Controllers da API .NET
 export const API_ENDPOINTS = {

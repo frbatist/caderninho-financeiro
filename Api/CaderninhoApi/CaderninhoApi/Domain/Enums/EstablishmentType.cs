@@ -89,5 +89,11 @@ public enum EstablishmentType
     /// Serviços de saúde
     /// </summary>
     [Display(Name = "Saúde")]
-    Health = 14
+    Health = 14,
+
+    /// <summary>
+    /// Serviços de saúde
+    /// </summary>
+    [Display(Name = "Outros")]
+    Other = 15
 }

@@ -20,9 +20,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
 import CaderninhoApiService, { 
   MonthlySpendingLimit, 
-  MonthlySpendingLimitFilterRequest,
-  EstablishmentType 
+  MonthlySpendingLimitFilterRequest
 } from '../services/caderninhoApiService';
+import { EstablishmentType } from '../types/establishmentType';
 
 type MonthlySpendingLimitsScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'MonthlySpendingLimits'>;
@@ -67,18 +67,21 @@ const statusOptions = [
 // Opções para filtro de tipo de estabelecimento
 const establishmentTypeOptions = [
   { value: undefined, label: 'Todos' },
+  { value: EstablishmentType.Supermarket, label: '🛒 Mercado' },
+  { value: EstablishmentType.ClothingStore, label: '� Loja de Roupas' },
+  { value: EstablishmentType.GasStation, label: '⛽ Posto de Combustível' },
+  { value: EstablishmentType.OnlineService, label: '💻 Serviço Online' },
+  { value: EstablishmentType.Games, label: '🎮 Games' },
+  { value: EstablishmentType.DepartmentStore, label: '🏬 Loja de Departamentos' },
   { value: EstablishmentType.Restaurant, label: '🍽️ Restaurante' },
-  { value: EstablishmentType.Supermarket, label: '🛒 Supermercado' },
-  { value: EstablishmentType.GasStation, label: '⛽ Posto de Gasolina' },
+  { value: EstablishmentType.Delivery, label: '� Delivery' },
+  { value: EstablishmentType.Charity, label: '❤️ Caridade' },
+  { value: EstablishmentType.Church, label: '⛪ Igreja' },
+  { value: EstablishmentType.Events, label: '� Eventos' },
+  { value: EstablishmentType.Entertainment, label: '🎬 Lazer' },
   { value: EstablishmentType.Pharmacy, label: '💊 Farmácia' },
-  { value: EstablishmentType.Clothing, label: '👕 Vestuário' },
-  { value: EstablishmentType.Electronics, label: '📱 Eletrônicos' },
-  { value: EstablishmentType.Services, label: '🔧 Serviços' },
-  { value: EstablishmentType.Education, label: '📚 Educação' },
   { value: EstablishmentType.Health, label: '🏥 Saúde' },
-  { value: EstablishmentType.Entertainment, label: '🎬 Entretenimento' },
-  { value: EstablishmentType.Transport, label: '🚗 Transporte' },
-  { value: EstablishmentType.Other, label: '📌 Outro' },
+  { value: EstablishmentType.Other, label: '🏪 Outros' },
 ];
 
 // Labels para tipos de estabelecimento
