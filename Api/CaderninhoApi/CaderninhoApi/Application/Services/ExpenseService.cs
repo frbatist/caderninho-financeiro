@@ -79,23 +79,23 @@ public class ExpenseService : IExpenseService
                 InstallmentCount = dto.InstallmentCount
             };
 
-            _context.Expenses.Add(expense);
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Despesa criada com sucesso: {ExpenseId} - {Description} - R$ {Amount}", 
-                expense.Id, expense.Description, expense.Amount);
-
             // Se a despesa for cartão de crédito, criar as parcelas
             if (dto.PaymentType == PaymentType.CreditCard)
             {
-                _logger.LogInformation("Criando {Count} parcela(s) para a despesa {ExpenseId}", 
+                _logger.LogInformation("Criando {Count} parcela(s) para a despesa {ExpenseId}",
                     dto.InstallmentCount, expense.Id);
-                
+
                 await _installmentService.CreateInstallmentsAsync(expense);
-                
+
                 _logger.LogInformation("Parcela(s) criada(s) com sucesso para a despesa {ExpenseId}", expense.Id);
             }
+            
+            _context.Expenses.Add(expense);
+            await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Despesa criada com sucesso: {ExpenseId} - {Description} - R$ {Amount}",
+                expense.Id, expense.Description, expense.Amount);
+                
             return expense;
         }
         catch (Exception ex)
