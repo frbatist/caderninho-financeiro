@@ -3,7 +3,7 @@
  * Lista limites de gasto por tipo de estabelecimento com filtros de ano/mês/tipo e status
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
-  ScrollView,
+  Modal,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -22,7 +22,12 @@ import CaderninhoApiService, {
   MonthlySpendingLimit, 
   MonthlySpendingLimitFilterRequest
 } from '../services/caderninhoApiService';
-import { EstablishmentType, getEstablishmentTypeIcon, getEstablishmentTypeName } from '../types/establishmentType';
+import { 
+  EstablishmentType, 
+  getEstablishmentTypeIcon, 
+  getEstablishmentTypeName,
+  getEstablishmentTypeOptionsWithIcons 
+} from '../types/establishmentType';
 
 type MonthlySpendingLimitsScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'MonthlySpendingLimits'>;
@@ -65,29 +70,14 @@ const statusOptions = [
 ];
 
 // Opções para filtro de tipo de estabelecimento
-const establishmentTypeOptions = [
-  { value: undefined, label: 'Todos' },
-  { value: EstablishmentType.Supermarket, label: '🛒 Mercado' },
-  { value: EstablishmentType.ClothingStore, label: '👗 Loja de Roupas' },
-  { value: EstablishmentType.GasStation, label: '⛽ Posto de Combustível' },
-  { value: EstablishmentType.OnlineService, label: '📺 Serviço Online' },
-  { value: EstablishmentType.Games, label: '🎮 Games' },
-  { value: EstablishmentType.DepartmentStore, label: '🏬 Loja de Departamentos' },
-  { value: EstablishmentType.Restaurant, label: '🍽️ Restaurante' },
-  { value: EstablishmentType.Delivery, label: '🏍️ Delivery' },
-  { value: EstablishmentType.Charity, label: '❤️ Caridade' },
-  { value: EstablishmentType.Church, label: '⛪ Igreja' },
-  { value: EstablishmentType.Events, label: '🎵 Eventos' },
-  { value: EstablishmentType.Entertainment, label: '🎬 Lazer' },
-  { value: EstablishmentType.Pharmacy, label: '💊 Farmácia' },
-  { value: EstablishmentType.Health, label: '🏥 Saúde' },
-  { value: EstablishmentType.Other, label: '🏪 Outros' },
+const getEstablishmentTypeFilterOptions = () => [
+  { value: undefined, label: 'Todos os Tipos', icon: '📋' },
+  ...getEstablishmentTypeOptionsWithIcons()
 ];
 
 // Labels para tipos de estabelecimento
 const getEstablishmentTypeLabel = (type: EstablishmentType): string => {
-  const option = establishmentTypeOptions.find(opt => opt.value === type);
-  return option ? option.label : '❓';
+  return `${getEstablishmentTypeIcon(type)} ${getEstablishmentTypeName(type)}`;
 };
 
 export default function MonthlySpendingLimitsScreen({ navigation }: MonthlySpendingLimitsScreenProps) {
@@ -97,11 +87,16 @@ export default function MonthlySpendingLimitsScreen({ navigation }: MonthlySpend
   const [selectedStatus, setSelectedStatus] = useState<boolean | undefined>(undefined);
   const [selectedEstablishmentType, setSelectedEstablishmentType] = useState<EstablishmentType | undefined>(undefined);
   
+  // Estados de modal de filtros
+  const [yearModalVisible, setYearModalVisible] = useState(false);
+  const [monthModalVisible, setMonthModalVisible] = useState(false);
+  const [typeModalVisible, setTypeModalVisible] = useState(false);
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+  
   // Estados de dados
   const [limits, setLimits] = useState<MonthlySpendingLimit[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [totalLimits, setTotalLimits] = useState(0);
 
   // Carregar limites
   const loadLimits = useCallback(async (showLoading = true) => {
@@ -118,7 +113,6 @@ export default function MonthlySpendingLimitsScreen({ navigation }: MonthlySpend
 
       const response = await CaderninhoApiService.monthlySpendingLimits.getAll(filter);
       setLimits(response.items);
-      setTotalLimits(response.totalItems);
     } catch (error) {
       console.error('Erro ao carregar limites de gasto:', error);
       Alert.alert('Erro', 'Não foi possível carregar os limites de gasto');
@@ -206,41 +200,69 @@ export default function MonthlySpendingLimitsScreen({ navigation }: MonthlySpend
     }).format(value);
   };
 
-  // Renderizar dropdown customizado (horizontal scrollable)
-  const renderDropdown = (
-    value: number | boolean | undefined,
-    options: { value: any; label: string }[],
-    onSelect: (value: any) => void,
-    label: string
+  // Renderizar selector de filtro (abre modal)
+  const renderFilterSelector = (label: string, value: string, onPress: () => void) => (
+    <TouchableOpacity style={styles.filterSelector} onPress={onPress}>
+      <Text style={styles.filterLabel}>{label}</Text>
+      <View style={styles.filterValueContainer}>
+        <Text style={styles.filterValue} numberOfLines={1}>{value}</Text>
+        <Text style={styles.filterArrow}>▼</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  // Renderizar modal de seleção
+  const renderSelectionModal = (
+    visible: boolean,
+    onClose: () => void,
+    title: string,
+    options: { value: any; label: string; icon?: string }[],
+    selectedValue: any,
+    onSelect: (value: any) => void
   ) => (
-    <View style={styles.dropdownContainer}>
-      <Text style={styles.dropdownLabel}>{label}</Text>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.dropdownScroll}
-      >
-        <View style={styles.dropdownOptions}>
-          {options.map((option, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.dropdownOption,
-                value === option.value && styles.dropdownOptionSelected
-              ]}
-              onPress={() => onSelect(option.value)}
-            >
-              <Text style={[
-                styles.dropdownOptionText,
-                value === option.value && styles.dropdownOptionTextSelected
-              ]}>
-                {option.label}
-              </Text>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <Text style={styles.modalCloseText}>✕</Text>
             </TouchableOpacity>
-          ))}
+          </View>
+          <FlatList
+            data={options}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.modalOption,
+                  selectedValue === item.value && styles.modalOptionSelected
+                ]}
+                onPress={() => {
+                  onSelect(item.value);
+                  onClose();
+                }}
+              >
+                <Text style={[
+                  styles.modalOptionText,
+                  selectedValue === item.value && styles.modalOptionTextSelected
+                ]}>
+                  {item.icon ? `${item.icon} ${item.label}` : item.label}
+                </Text>
+                {selectedValue === item.value && (
+                  <Text style={styles.modalOptionCheck}>✓</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          />
         </View>
-      </ScrollView>
-    </View>
+      </View>
+    </Modal>
   );
 
   // Renderizar item de limite
@@ -304,23 +326,31 @@ export default function MonthlySpendingLimitsScreen({ navigation }: MonthlySpend
   const activeLimits = limits.filter(l => l.isActive);
   const totalLimitAmount = activeLimits.reduce((sum, l) => sum + l.limitAmount, 0);
 
+  // Obter labels para exibição nos filtros
+  const getYearLabel = () => selectedYear.toString();
+  const getMonthLabel = () => monthOptions.find(m => m.value === selectedMonth)?.label || '';
+  const getTypeLabel = () => {
+    if (selectedEstablishmentType === undefined) return 'Todos os Tipos';
+    return getEstablishmentTypeName(selectedEstablishmentType);
+  };
+  const getStatusLabel = () => statusOptions.find(s => s.value === selectedStatus)?.label || '';
+
   return (
     <View style={styles.container}>
       {/* Header com filtros */}
       <View style={styles.header}>
         <Text style={styles.title}>Limites de Gasto Mensal</Text>
         
-        {/* Filtro de Ano */}
-        {renderDropdown(selectedYear, generateYearOptions(), setSelectedYear, 'Ano')}
+        {/* Grid de Filtros (2 por linha) */}
+        <View style={styles.filtersRow}>
+          {renderFilterSelector('Ano', getYearLabel(), () => setYearModalVisible(true))}
+          {renderFilterSelector('Mês', getMonthLabel(), () => setMonthModalVisible(true))}
+        </View>
         
-        {/* Filtro de Mês */}
-        {renderDropdown(selectedMonth, monthOptions, setSelectedMonth, 'Mês')}
-        
-        {/* Filtro de Tipo de Estabelecimento */}
-        {renderDropdown(selectedEstablishmentType, establishmentTypeOptions, setSelectedEstablishmentType, 'Tipo')}
-        
-        {/* Filtro de Status */}
-        {renderDropdown(selectedStatus, statusOptions, setSelectedStatus, 'Status')}
+        <View style={styles.filtersRow}>
+          {renderFilterSelector('Tipo', getTypeLabel(), () => setTypeModalVisible(true))}
+          {renderFilterSelector('Status', getStatusLabel(), () => setStatusModalVisible(true))}
+        </View>
         
         {/* Resumo */}
         {activeLimits.length > 0 && (
@@ -328,6 +358,7 @@ export default function MonthlySpendingLimitsScreen({ navigation }: MonthlySpend
             <View style={styles.summaryCard}>
               <Text style={styles.summaryLabel}>Total de Limites Ativos</Text>
               <Text style={styles.summaryTotal}>{formatCurrency(totalLimitAmount)}</Text>
+              <Text style={styles.summaryCount}>{activeLimits.length} limite(s)</Text>
             </View>
           </View>
         )}
@@ -355,6 +386,43 @@ export default function MonthlySpendingLimitsScreen({ navigation }: MonthlySpend
         />
       )}
 
+      {/* Modais de Filtro */}
+      {renderSelectionModal(
+        yearModalVisible,
+        () => setYearModalVisible(false),
+        'Selecionar Ano',
+        generateYearOptions(),
+        selectedYear,
+        setSelectedYear
+      )}
+      
+      {renderSelectionModal(
+        monthModalVisible,
+        () => setMonthModalVisible(false),
+        'Selecionar Mês',
+        monthOptions,
+        selectedMonth,
+        setSelectedMonth
+      )}
+      
+      {renderSelectionModal(
+        typeModalVisible,
+        () => setTypeModalVisible(false),
+        'Selecionar Tipo',
+        getEstablishmentTypeFilterOptions(),
+        selectedEstablishmentType,
+        setSelectedEstablishmentType
+      )}
+      
+      {renderSelectionModal(
+        statusModalVisible,
+        () => setStatusModalVisible(false),
+        'Selecionar Status',
+        statusOptions,
+        selectedStatus,
+        setSelectedStatus
+      )}
+
       {/* Botão Flutuante Adicionar */}
       <TouchableOpacity style={styles.fab} onPress={handleAddLimit}>
         <Text style={styles.fabIcon}>+</Text>
@@ -380,39 +448,40 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: '#333',
   },
-  dropdownContainer: {
+  filtersRow: {
+    flexDirection: 'row',
+    gap: 12,
     marginBottom: 12,
   },
-  dropdownLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 8,
-  },
-  dropdownScroll: {
-    flexGrow: 0,
-  },
-  dropdownOptions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  dropdownOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#f0f0f0',
+  filterSelector: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    padding: 12,
     borderRadius: 8,
-    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#dee2e6',
   },
-  dropdownOptionSelected: {
-    backgroundColor: '#007AFF',
-  },
-  dropdownOptionText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  dropdownOptionTextSelected: {
-    color: '#fff',
+  filterLabel: {
+    fontSize: 12,
+    color: '#6c757d',
+    marginBottom: 4,
     fontWeight: '600',
+  },
+  filterValueContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  filterValue: {
+    fontSize: 14,
+    color: '#212529',
+    fontWeight: '500',
+    flex: 1,
+  },
+  filterArrow: {
+    fontSize: 12,
+    color: '#6c757d',
+    marginLeft: 4,
   },
   summaryContainer: {
     marginTop: 16,
@@ -430,9 +499,73 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   summaryTotal: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#0d47a1',
+  },
+  summaryCount: {
+    fontSize: 12,
+    color: '#1976d2',
+    marginTop: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    fontSize: 24,
+    color: '#666',
+  },
+  modalOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalOptionSelected: {
+    backgroundColor: '#e3f2fd',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  modalOptionTextSelected: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  modalOptionCheck: {
+    fontSize: 20,
+    color: '#007AFF',
+    marginLeft: 8,
   },
   loadingContainer: {
     flex: 1,

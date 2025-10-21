@@ -13,6 +13,8 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -20,7 +22,12 @@ import { RootStackParamList } from '../navigation/types';
 import CaderninhoApiService, { 
   CreateMonthlySpendingLimitDto
 } from '../services/caderninhoApiService';
-import { EstablishmentType, getEstablishmentTypeOptionsWithIcons } from '../types/establishmentType';
+import { 
+  EstablishmentType, 
+  getEstablishmentTypeOptionsWithIcons,
+  getEstablishmentTypeIcon,
+  getEstablishmentTypeName
+} from '../types/establishmentType';
 
 type AddMonthlySpendingLimitScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddMonthlySpendingLimit'>;
 type AddMonthlySpendingLimitScreenRouteProp = RouteProp<RootStackParamList, 'AddMonthlySpendingLimit'>;
@@ -60,6 +67,10 @@ export default function AddMonthlySpendingLimitScreen({ navigation }: AddMonthly
   // Estados de controle
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Estados dos modais
+  const [typeModalVisible, setTypeModalVisible] = useState(false);
+  const [monthModalVisible, setMonthModalVisible] = useState(false);
 
   // Validação do formulário
   const validateForm = (): boolean => {
@@ -135,44 +146,78 @@ export default function AddMonthlySpendingLimitScreen({ navigation }: AddMonthly
     }
   };
 
-  // Renderizar opções de seleção
-  const renderSelector = (
+  // Renderizar campo de seleção (abre modal)
+  const renderDropdownField = (
+    label: string,
+    value: string,
+    onPress: () => void,
+    error?: string
+  ) => (
+    <View style={styles.inputGroup}>
+      <Text style={styles.label}>{label} *</Text>
+      <TouchableOpacity
+        style={[styles.dropdownButton, error && styles.inputError]}
+        onPress={onPress}
+      >
+        <Text style={styles.dropdownButtonText}>{value}</Text>
+        <Text style={styles.dropdownArrow}>▼</Text>
+      </TouchableOpacity>
+      {error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
+  );
+
+  // Renderizar modal de seleção
+  const renderSelectionModal = (
+    visible: boolean,
+    onClose: () => void,
+    title: string,
     options: { value: any; label: string; icon?: string }[],
     selectedValue: any,
-    onSelect: (value: any) => void,
-    title: string
+    onSelect: (value: any) => void
   ) => (
-    <View style={styles.selectorContainer}>
-      <Text style={styles.selectorTitle}>{title}</Text>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.selectorScroll}
-      >
-        {options.map((option) => (
-          <TouchableOpacity
-            key={option.value}
-            style={[
-              styles.selectorOption,
-              selectedValue === option.value && styles.selectorOptionSelected,
-            ]}
-            onPress={() => onSelect(option.value)}
-          >
-            {option.icon && (
-              <Text style={styles.selectorIcon}>{option.icon}</Text>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <Text style={styles.modalCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={options}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.modalOption,
+                  selectedValue === item.value && styles.modalOptionSelected
+                ]}
+                onPress={() => {
+                  onSelect(item.value);
+                  onClose();
+                }}
+              >
+                <Text style={[
+                  styles.modalOptionText,
+                  selectedValue === item.value && styles.modalOptionTextSelected
+                ]}>
+                  {item.icon ? `${item.icon} ${item.label}` : item.label}
+                </Text>
+                {selectedValue === item.value && (
+                  <Text style={styles.modalOptionCheck}>✓</Text>
+                )}
+              </TouchableOpacity>
             )}
-            <Text
-              style={[
-                styles.selectorText,
-                selectedValue === option.value && styles.selectorTextSelected,
-              ]}
-            >
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
+          />
+        </View>
+      </View>
+    </Modal>
   );
 
   return (
@@ -181,14 +226,11 @@ export default function AddMonthlySpendingLimitScreen({ navigation }: AddMonthly
         <Text style={styles.title}>Novo Limite de Gasto</Text>
 
         {/* Tipo de Estabelecimento */}
-        {renderSelector(
-          establishmentTypeOptions,
-          establishmentType,
-          (value) => {
-            setEstablishmentType(value);
-            updateField('establishmentType');
-          },
-          'Tipo de Estabelecimento'
+        {renderDropdownField(
+          'Tipo de Estabelecimento',
+          `${getEstablishmentTypeIcon(establishmentType)} ${getEstablishmentTypeName(establishmentType)}`,
+          () => setTypeModalVisible(true),
+          errors.establishmentType
         )}
 
         {/* Valor do Limite */}
@@ -211,40 +253,20 @@ export default function AddMonthlySpendingLimitScreen({ navigation }: AddMonthly
 
         {/* Mês e Ano */}
         <View style={styles.rowGroup}>
-          <View style={[styles.inputGroup, styles.halfWidth]}>
-            <Text style={styles.label}>Mês *</Text>
-            <View style={styles.pickerContainer}>
-              {monthOptions.map((monthOption) => (
-                <TouchableOpacity
-                  key={monthOption.value}
-                  style={[
-                    styles.pickerOption,
-                    month === monthOption.value && styles.pickerOptionSelected,
-                  ]}
-                  onPress={() => {
-                    setMonth(monthOption.value);
-                    updateField('month');
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.pickerOptionText,
-                      month === monthOption.value && styles.pickerOptionTextSelected,
-                    ]}
-                  >
-                    {monthOption.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {errors.month && <Text style={styles.errorText}>{errors.month}</Text>}
+          <View style={styles.halfWidth}>
+            {renderDropdownField(
+              'Mês',
+              monthOptions.find(m => m.value === month)?.label || '',
+              () => setMonthModalVisible(true),
+              errors.month
+            )}
           </View>
 
           <View style={[styles.inputGroup, styles.halfWidth]}>
             <Text style={styles.label}>Ano *</Text>
             <TextInput
               style={[styles.input, errors.year && styles.inputError]}
-              placeholder="Ex: 2024"
+              placeholder="Ex: 2025"
               value={year.toString()}
               onChangeText={(text) => {
                 setYear(parseInt(text) || currentDate.getFullYear());
@@ -280,6 +302,31 @@ export default function AddMonthlySpendingLimitScreen({ navigation }: AddMonthly
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Modais de Seleção */}
+      {renderSelectionModal(
+        typeModalVisible,
+        () => setTypeModalVisible(false),
+        'Selecionar Tipo de Estabelecimento',
+        establishmentTypeOptions,
+        establishmentType,
+        (value) => {
+          setEstablishmentType(value);
+          updateField('establishmentType');
+        }
+      )}
+
+      {renderSelectionModal(
+        monthModalVisible,
+        () => setMonthModalVisible(false),
+        'Selecionar Mês',
+        monthOptions,
+        month,
+        (value) => {
+          setMonth(value);
+          updateField('month');
+        }
+      )}
     </ScrollView>
   );
 }
@@ -298,45 +345,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     color: '#333',
   },
-  selectorContainer: {
-    marginBottom: 24,
-  },
-  selectorTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  selectorScroll: {
-    gap: 12,
-  },
-  selectorOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    alignItems: 'center',
-    minWidth: 120,
-  },
-  selectorOptionSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#e3f2fd',
-  },
-  selectorIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  selectorText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-  selectorTextSelected: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
   inputGroup: {
     marginBottom: 20,
   },
@@ -346,7 +354,6 @@ const styles = StyleSheet.create({
   rowGroup: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 20,
   },
   label: {
     fontSize: 16,
@@ -371,29 +378,85 @@ const styles = StyleSheet.create({
     color: '#f44336',
     marginTop: 4,
   },
-  pickerContainer: {
+  dropdownButton: {
     backgroundColor: '#fff',
-    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    maxHeight: 200,
-  },
-  pickerOption: {
-    paddingVertical: 12,
+    borderRadius: 8,
     paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  dropdownArrow: {
+    fontSize: 12,
+    color: '#6c757d',
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    fontSize: 24,
+    color: '#666',
+  },
+  modalOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
-  pickerOptionSelected: {
+  modalOptionSelected: {
     backgroundColor: '#e3f2fd',
   },
-  pickerOptionText: {
-    fontSize: 14,
-    color: '#666',
+  modalOptionText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
   },
-  pickerOptionTextSelected: {
+  modalOptionTextSelected: {
     color: '#007AFF',
     fontWeight: '600',
+  },
+  modalOptionCheck: {
+    fontSize: 20,
+    color: '#007AFF',
+    marginLeft: 8,
   },
   buttonContainer: {
     flexDirection: 'row',
