@@ -3,12 +3,13 @@
  * Mostra resumo financeiro e navegação principal
  */
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
 import UserStorageService from '../services/userStorageService';
-import { User } from '../services/caderninhoApiService';
+import CaderninhoApiService, { User, MonthlyEntry, OperationType, PaymentType } from '../services/caderninhoApiService';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -16,14 +17,18 @@ type HomeScreenProps = {
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [income, setIncome] = useState(0);
+  const [expenses, setExpenses] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadUser();
-    
-    // Recarrega usuário quando a tela ganha foco
-    const unsubscribe = navigation.addListener('focus', loadUser);
-    return unsubscribe;
-  }, [navigation]);
+  // Carregar dados quando a tela recebe foco
+  useFocusEffect(
+    useCallback(() => {
+      loadUser();
+      loadFinancialData();
+    }, [])
+  );
 
   /**
    * Carrega o usuário do storage
@@ -36,6 +41,74 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       console.error('Erro ao carregar usuário:', error);
     }
   };
+
+  /**
+   * Carrega os dados financeiros (receitas e despesas)
+   */
+  const loadFinancialData = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    
+    try {
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth() + 1;
+      const currentYear = currentDate.getFullYear();
+
+      // Buscar entradas mensais ativas do mês/ano atual
+      const monthlyEntriesResponse = await CaderninhoApiService.monthlyEntries.getAll({
+        month: currentMonth,
+        year: currentYear,
+        isActive: true,
+        pageSize: 1000,
+      });
+
+      // Calcular receitas (entradas mensais com operation = Income)
+      const totalIncome = monthlyEntriesResponse.items
+        .filter(entry => entry.operation === OperationType.Income)
+        .reduce((sum, entry) => sum + entry.amount, 0);
+
+      // Calcular despesas fixas (entradas mensais com operation = Expense)
+      const monthlyExpenses = monthlyEntriesResponse.items
+        .filter(entry => entry.operation === OperationType.Expense)
+        .reduce((sum, entry) => sum + entry.amount, 0);
+
+      // Buscar despesas do mês atual (excluindo cartão de crédito)
+      const expensesResponse = await CaderninhoApiService.expenses.getAll({
+        month: currentMonth,
+        year: currentYear,
+        pageSize: 1000,
+      });
+
+      // Calcular gastos do mês (excluindo cartão de crédito)
+      const monthExpenses = expensesResponse.items
+        .filter(expense => expense.paymentType !== PaymentType.CreditCard)
+        .reduce((sum, expense) => sum + expense.amount, 0);
+
+      // Total de despesas = despesas mensais fixas + gastos do mês
+      const totalExpenses = monthlyExpenses + monthExpenses;
+
+      setIncome(totalIncome);
+      setExpenses(totalExpenses);
+    } catch (error) {
+      console.error('Erro ao carregar dados financeiros:', error);
+      Alert.alert('Erro', 'Não foi possível carregar os dados financeiros');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  /**
+   * Refresh dos dados
+   */
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadFinancialData(false);
+  };
+
+  /**
+   * Calcular saldo
+   */
+  const balance = income - expenses;
 
   /**
    * Troca de usuário
@@ -61,8 +134,23 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     );
   };
 
+  /**
+   * Formatar valor monetário
+   */
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.content}>
         {/* Cabeçalho */}
         <View style={styles.header}>
@@ -83,18 +171,36 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
         {/* Card de resumo */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Saldo Total</Text>
-          <Text style={styles.summaryAmount}>R$ 0,00</Text>
-          <View style={styles.summaryDetails}>
-            <View>
-              <Text style={styles.summaryLabel}>Receitas</Text>
-              <Text style={[styles.summaryValue, styles.income]}>R$ 0,00</Text>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#fff" />
+              <Text style={styles.loadingText}>Carregando...</Text>
             </View>
-            <View>
-              <Text style={styles.summaryLabel}>Despesas</Text>
-              <Text style={[styles.summaryValue, styles.expense]}>R$ 0,00</Text>
-            </View>
-          </View>
+          ) : (
+            <>
+              <Text style={styles.summaryTitle}>Saldo Total</Text>
+              <Text style={[
+                styles.summaryAmount,
+                balance < 0 && styles.negativeBalance
+              ]}>
+                {formatCurrency(balance)}
+              </Text>
+              <View style={styles.summaryDetails}>
+                <View>
+                  <Text style={styles.summaryLabel}>Receitas</Text>
+                  <Text style={[styles.summaryValue, styles.income]}>
+                    {formatCurrency(income)}
+                  </Text>
+                </View>
+                <View>
+                  <Text style={styles.summaryLabel}>Despesas</Text>
+                  <Text style={[styles.summaryValue, styles.expense]}>
+                    {formatCurrency(expenses)}
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Menu de navegação */}
@@ -120,32 +226,17 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             onPress={() => navigation.navigate('MonthlyStatement')}
           />
           <MenuButton
-            title="Transações"
-            icon="💰"
-            onPress={() => navigation.navigate('Transactions')}
-          />
-          <MenuButton
-            title="Contas"
-            icon="🏦"
-            onPress={() => navigation.navigate('Accounts')}
-          />
-          <MenuButton
             title="Cartões"
             icon="🃏"
             onPress={() => navigation.navigate('Cards')}
-          />
-          <MenuButton
-            title="Categorias"
-            icon="�"
-            onPress={() => navigation.navigate('Categories')}
           />
         </View>
 
         {/* Informação */}
         <View style={styles.infoBox}>
           <Text style={styles.infoText}>
-            ℹ️ Esta é uma aplicação em desenvolvimento.{'\n'}
-            Configure a URL da API em src/constants/api.ts
+            ℹ️ Os valores são atualizados automaticamente.{'\n'}
+            Puxe para baixo para atualizar os dados.
           </Text>
         </View>
       </View>
@@ -211,6 +302,17 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 25,
   },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#fff',
+    marginTop: 10,
+    opacity: 0.9,
+  },
   summaryTitle: {
     fontSize: 16,
     color: '#fff',
@@ -221,6 +323,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     marginVertical: 10,
+  },
+  negativeBalance: {
+    color: '#FF3B30',
   },
   summaryDetails: {
     flexDirection: 'row',
