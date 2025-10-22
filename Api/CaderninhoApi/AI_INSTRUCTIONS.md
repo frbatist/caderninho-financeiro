@@ -1,0 +1,687 @@
+# Instru��es de IA - Caderninho Financeiro
+
+## Vis�o Geral do Projeto
+Este � um sistema financeiro desenvolvido em .NET 9 com arquitetura limpa (Clean Architecture). O projeto segue os princ�pios de Domain-Driven Design (DDD) e tem como objetivo fornecer uma API robusta para gerenciamento financeiro pessoal.
+
+## Estrutura de Diret�rios
+
+### 1. Application (Camada de Aplica��o)
+- **Localiza��o**: `/Application/`
+- **Responsabilidade**: Servi�os de aplica��o, casos de uso, handlers de comandos/queries
+- **Conte�do**:
+  - Services (ex: `IUserService`, `TransactionService`)
+  - Commands/Queries (CQRS pattern)
+  - Handlers
+  - DTOs de aplica��o
+  - Interfaces de servi�os
+
+### 2. Domain (Camada de Dom�nio)
+- **Localiza��o**: `/Domain/`
+- **Responsabilidade**: Entidades de neg�cio, regras de dom�nio, interfaces
+- **Conte�do**:
+  - **Entities**: Entidades de dom�nio (ex: `User`, `Transaction`, `Account`)
+  - **ValueObjects**: Objetos de valor (ex: `Money`, `Email`)
+  - **Interfaces**: Contratos do dom�nio (ex: `IUserRepository`)
+  - **Services**: Domain Services para l�gica de neg�cio complexa que n�o pertence a uma entidade
+  - **Abstractions**: Interfaces de domain services
+  - **Enums**: Enumera��es de dom�nio (ex: `PaymentType`, `TransactionType`, `AccountStatus`)
+  - **DTOs**: Data Transfer Objects
+  - **Exceptions**: Exce��es espec�ficas do dom�nio
+  - **Events**: Eventos de dom�nio
+
+#### Domain Services
+- **Prop�sito**: Implementar l�gica de neg�cio complexa que envolve m�ltiplas entidades
+- **Localiza��o**: `/Domain/Services/` (implementa��o) e `/Domain/Abstractions/` (interface)
+- **Responsabilidades**:
+  - Orquestrar opera��es complexas entre entidades
+  - Implementar regras de neg�cio que n�o pertencem a uma �nica entidade
+  - Calcular valores baseados em regras de dom�nio
+  - Validar cen�rios de neg�cio complexos
+- **IMPORTANTE - Domain Services N�O devem**:
+  - **N�O chamar `SaveChangesAsync()`**: A persist�ncia � responsabilidade da camada de aplica��o
+  - **N�O acessar banco de dados diretamente para persist�ncia**: Apenas para leitura quando necess�rio
+  - **N�O ter depend�ncias de infraestrutura**: Apenas `DbContext` para queries se absolutamente necess�rio
+- **Exemplo**:
+```csharp
+// Domain Service para c�lculo de parcelas de cart�o de cr�dito
+public class CreditCardInstallmentDomainService : ICreditCardInstallmentDomainService
+{
+    private readonly ApplicationDbContext _context;
+    
+    public async Task<List<CreditCardInstallment>> CreateInstallmentsAsync(Expense expense)
+    {
+        // 1. Buscar dados necess�rios (READ-ONLY)
+        var card = await _context.Cards.FindAsync(expense.CardId);
+        
+        // 2. Aplicar regras de neg�cio e calcular
+        var installments = new List<CreditCardInstallment>();
+        // ... l�gica de c�lculo ...
+        
+        // 3. Retornar entidades criadas (SEM salvar no banco)
+        return installments;
+    }
+}
+
+// Application Service que consome o Domain Service
+public class ExpenseService : IExpenseService
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ICreditCardInstallmentDomainService _installmentService;
+    
+    public async Task<Expense> CreateAsync(CreateExpenseDto dto)
+    {
+        var expense = new Expense { /* ... */ };
+        _context.Expenses.Add(expense);
+        await _context.SaveChangesAsync(); // Application Service salva a despesa
+        
+        // Domain Service retorna as parcelas calculadas
+        var installments = await _installmentService.CreateInstallmentsAsync(expense);
+        
+        // Application Service persiste as parcelas
+        await _context.CreditCardInstallments.AddRangeAsync(installments);
+        await _context.SaveChangesAsync();
+        
+        return expense;
+    }
+}
+```
+
+### 3. Infrastructure (Camada de Infraestrutura)
+- **Localiza��o**: `/Infrastructure/`
+- **Responsabilidade**: Implementa��es de acesso a dados, integra��es externas
+- **Conte�do**:
+  - **Data**: Contexto do Entity Framework, configura��es
+  - **Repositories**: Implementa��es dos reposit�rios
+  - **Mappings**: Configura��es do Entity Framework (Fluent API)
+  - **External**: Integra��es com APIs externas
+  - **Migrations**: Migra��es do banco de dados
+  - **Helpers**: Utilit�rios e extens�es (ex: `EnumHelper`)
+
+#### EnumHelper
+- **Localiza��o**: `/Infrastructure/Helpers/EnumHelper.cs`
+- **Prop�sito**: Obter nomes de exibi��o de enums usando Reflection
+- **Funcionamento**: L� o atributo `[Display(Name = "...")]` dos valores de enum
+- **Uso**: Chamar `.GetDisplayName()` em qualquer valor de enum
+- **Benef�cios**:
+  - **DRY (Don't Repeat Yourself)**: Evita duplica��o de switch cases para cada enum
+  - **Manuten��o**: Novos valores de enum funcionam automaticamente sem c�digo adicional
+  - **Consist�ncia**: Centraliza a l�gica de obten��o de nomes de exibi��o
+  - **Performance**: Usa Reflection de forma eficiente com fallback para `ToString()`
+- **Exemplo**:
+```csharp
+// Enum com Display attributes
+public enum PaymentType
+{
+    [Display(Name = "D�bito")]
+    Debit = 1,
+    
+    [Display(Name = "Cr�dito")]
+    CreditCard = 2,
+    
+    [Display(Name = "Pix")]
+    Pix = 3
+}
+
+// Uso do EnumHelper
+var paymentType = PaymentType.CreditCard;
+var displayName = paymentType.GetDisplayName(); // Retorna "Cr�dito"
+
+// Em vez de:
+private string GetPaymentTypeName(PaymentType type)
+{
+    return type switch
+    {
+        PaymentType.Debit => "D�bito",
+        PaymentType.CreditCard => "Cr�dito",
+        PaymentType.Pix => "Pix",
+        _ => type.ToString()
+    };
+}
+```
+- **IMPORTANTE**: SEMPRE use `.GetDisplayName()` em vez de criar switch cases para enums com `[Display]` attributes
+
+## Padr�es e Conven��es
+
+### Arquitetura
+- **Clean Architecture**: Separa��o clara de responsabilidades
+- **CQRS**: Separa��o entre comandos (write) e queries (read)
+- **Repository Pattern**: Abstra��o do acesso a dados
+- **Unit of Work**: Gerenciamento de transa��es
+
+### Nomenclatura
+- **Classes**: PascalCase (ex: `UserService`, `TransactionRepository`)
+- **M�todos**: PascalCase (ex: `GetUserById`, `CreateTransaction`)
+- **Propriedades**: PascalCase (ex: `UserId`, `Amount`)
+- **Par�metros**: camelCase (ex: `userId`, `transactionAmount`)
+- **Constantes**: UPPER_CASE (ex: `MAX_TRANSACTION_AMOUNT`)
+
+### Idioma e Localiza��o
+- **C�digo**: Todo em ingl�s (classes, m�todos, propriedades, vari�veis)
+- **Interface do Usu�rio**: Todo em portugu�s (mensagens, labels, display names)
+- **Exemplos**:
+  - Usar `[Display(Name = "Nome do Usu�rio")]` para propriedades
+  - Mensagens de erro em portugu�s: "Usu�rio n�o encontrado"
+  - Enums com `[Display(Name = "Descri��o em Portugu�s")]`
+  - Documenta��o XML em portugu�s para m�todos p�blicos
+
+### Entity Framework
+- **Context**: Usar `ApplicationDbContext`
+- **Configura��es**: Usar Fluent API em arquivos separados na pasta `Mappings`
+- **Convenções**: 
+  - **Primary Keys**: Usar `int` como padrão para propriedade `Id`
+  - Usar `CreatedAt` e `UpdatedAt` para auditoria (`UpdatedAt` nullable)
+  - Soft delete com propriedade `IsDeleted`
+
+## Testes
+
+### Estrutura de Testes
+- **Padr�o AAA**: Arrange, Act, Assert
+- **Mocking**: NSubstitute para cria��o de mocks
+- **Assertions**: FluentAssertions para valida��es
+
+### Exemplo de Teste
+```csharp
+[Fact]
+public async Task CreateUser_WithValidData_ShouldReturnSuccess()
+{
+    // Arrange
+    var context = CreateInMemoryContext();
+    var logger = Substitute.For<ILogger<UserService>>();
+    var userService = new UserService(context, logger);
+    var createUserDto = new CreateUserDto { Name = "João Silva", Email = "joao@email.com" };
+
+    // Act
+    var result = await userService.CreateUserAsync(createUserDto);
+
+    // Assert
+    result.Should().NotBeNull();
+    result.Id.Should().BeGreaterThan(0);
+    result.Name.Should().Be("João Silva");
+}
+```
+
+### Conven��es de Testes
+- **Nomenclatura**: `MethodName_Scenario_ExpectedResult`
+- **Estrutura**: Uma classe de teste por classe testada
+- **Organiza��o**: Agrupar testes relacionados em nested classes quando apropriado
+
+## Depend�ncias e Bibliotecas
+
+### Produ��o
+- **Entity Framework Core**: ORM para acesso a dados
+- **AutoMapper**: Mapeamento entre objetos
+- **FluentValidation**: Valida��o de entrada
+- **MediatR**: Implementa��o de mediator pattern
+- **Serilog**: Logging estruturado
+
+### Testes
+- **NUnit**: Framework de testes
+- **NSubstitute**: Framework de mocking
+- **FluentAssertions**: Biblioteca de assertions
+- **Microsoft.EntityFrameworkCore.InMemory**: Banco em memória para testes
+
+**Nota**: O projeto usa **xUnit** como framework de testes.
+
+## Regras de Neg�cio
+
+### Valida��es
+- Sempre validar entrada de dados usando FluentValidation
+- Implementar valida��es de dom�nio nas entidades
+- Usar Result Pattern para retorno de opera��es
+
+### Exce��es
+- Criar exce��es espec�ficas do dom�nio
+- Usar middleware para tratamento global de exce��es
+- Logar todas as exce��es com contexto adequado
+
+### Seguran�a
+- Implementar autentica��o JWT
+- Validar autoriza��o em todos os endpoints
+- Sanitizar todas as entradas de usu�rio
+
+## Estilo de C�digo
+
+### Formata��o
+- Usar 4 espa�os para indenta��o
+- Quebra de linha ap�s 120 caracteres
+- Usar `var` quando o tipo for �bvio
+- Sempre usar chaves `{}` mesmo para blocos de uma linha
+
+### Coment�rios
+- Documentar m�todos p�blicos com XML comments
+- Evitar coment�rios �bvios
+- Explicar o "porqu�", n�o o "como"
+
+## Comandos �teis
+
+### Entity Framework
+```bash
+# Adicionar migra��o
+dotnet ef migrations add NomeDaMigracao
+
+# Atualizar banco
+dotnet ef database update
+
+# Remover �ltima migra��o
+dotnet ef migrations remove
+```
+
+### Testes
+```bash
+# Executar todos os testes
+dotnet test
+
+# Executar com coverage
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+## Instru��es para IA
+
+### Restri��es de Execu��o
+- **N�O EXECUTAR**: N�o execute migrations, projeto ou testes diretamente
+- **N�O RODAR**: N�o use comandos `dotnet ef database update`, `dotnet run`, `dotnet test`
+- **APENAS FORNECER**: Apenas forne�a os comandos necess�rios para que o desenvolvedor execute manualmente
+- **EXPLICAR**: Sempre explique o que cada comando faz e quando deve ser executado
+
+### Quando Sugerir Comandos
+- Após criar/modificar entidades: Sugerir comando de migration
+- Após modificar DbContext ou configurações: Sugerir atualização do banco
+- Após implementar novos recursos: Sugerir execução de testes
+- Após modificações no código: Sugerir build do projeto
+
+## Padrão de APIs
+
+### Estrutura de Endpoints
+Ao criar novos endpoints REST, seguir o seguinte padrão:
+
+#### 1. **DTOs** (`Domain/DTOs/`)
+- Criar DTOs específicos para operações (ex: `CreateEntityDto`, `UpdateEntityDto`)
+- Usar Data Annotations para validação
+- Mensagens de validação em português
+- Exemplo:
+```csharp
+public class CreateEntityDto
+{
+    [Required(ErrorMessage = "O campo é obrigatório")]
+    [MaxLength(100, ErrorMessage = "Máximo de 100 caracteres")]
+    [Display(Name = "Nome em Português")]
+    public string Name { get; set; } = string.Empty;
+}
+```
+
+#### 2. **Filter Requests** (`Request/`)
+- Criar objetos de filtro para endpoints GET com paginação
+- Propriedades padrão: `PageNumber`, `PageSize`, `SearchText` (herdadas de `BaseFilterRequest`)
+- Adicionar propriedades específicas conforme necessário
+- Usar tipos nullable (`?`) para filtros opcionais
+- Exemplo: `EntityFilterRequest`
+
+```csharp
+public class MonthlyEntryFilterRequest : BaseFilterRequest
+{
+    /// <summary>
+    /// Filtro por mês (1-12)
+    /// </summary>
+    public int? Month { get; set; }
+
+    /// <summary>
+    /// Filtro por ano
+    /// </summary>
+    public int? Year { get; set; }
+
+    /// <summary>
+    /// Filtro por status ativo/inativo
+    /// </summary>
+    public bool? IsActive { get; set; }
+}
+```
+
+#### 3. **Paged Response** (`Request/PagedResponse.cs`)
+- Usar a classe genérica `PagedResponse<T>` para respostas paginadas
+- Contém: `Items`, `PageNumber`, `PageSize`, `TotalItems`, `TotalPages`, `HasPreviousPage`, `HasNextPage`
+
+#### 4. **Service Interface** (`Domain/Abstractions/ApplicationServices/`)
+- Definir interface para operações de negócio
+- Apenas operações de escrita (Create, Update, Delete, etc.)
+- Exemplo: `IEntityService`
+- Nomenclatura de métodos: `CreateAsync`, `UpdateAsync`, `DeleteAsync`, `ToggleActiveAsync`
+
+#### 5. **Service Implementation** (`Application/Services/`)
+- Implementar a interface
+- Injetar `ApplicationDbContext` e `ILogger`
+- Fazer log de operações importantes
+- Incluir logs de warning para operações que falharam (ex: entidade não encontrada)
+- Exemplo: `EntityService`
+
+#### 6. **Controller** (`Controllers/`)
+- Injetar `ApplicationDbContext` (para queries GET) e `IEntityService` (para comandos POST/PUT/DELETE/PATCH)
+- **GETs ficam no Controller** com acesso direto ao DbContext
+- **Comandos (POST/PUT/DELETE/PATCH) usam o Service**
+- Endpoints padrão:
+  - **GET /api/entities** - Lista paginada com filtro (direto no controller)
+  - **GET /api/entities/{id}** - Busca por ID (direto no controller)
+  - **POST /api/entities** - Criação (via service)
+  - **PUT /api/entities/{id}** - Atualização (via service)
+  - **DELETE /api/entities/{id}** - Exclusão (via service)
+  - **PATCH /api/entities/{id}/toggle-active** - Toggle status (via service, quando aplicável)
+
+#### 7. **Registro de Serviços** (`Program.cs`)
+- Registrar serviços com `AddScoped<IEntityService, EntityService>()`
+
+### Exemplo Completo de Implementação
+```csharp
+// 1. DTO
+public class CreateCardDto
+{
+    [Required(ErrorMessage = "O nome é obrigatório")]
+    [Display(Name = "Nome do Cartão")]
+    public string Name { get; set; } = string.Empty;
+}
+
+// 2. Interface
+public interface ICardService
+{
+    Task<Card> CreateAsync(CreateCardDto dto);
+    Task<Card?> UpdateAsync(int id, CreateCardDto dto);
+    Task<bool> DeleteAsync(int id);
+}
+
+// 3. Service
+public class CardService : ICardService
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<CardService> _logger;
+    
+    public async Task<Card> CreateAsync(CreateCardDto dto)
+    {
+        var card = new Card { Name = dto.Name };
+        _context.Cards.Add(card);
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Cartão criado: {CardId}", card.Id);
+        return card;
+    }
+    
+    public async Task<Card?> UpdateAsync(int id, CreateCardDto dto)
+    {
+        var card = await _context.Cards.FindAsync(id);
+        if (card == null)
+        {
+            _logger.LogWarning("Tentativa de atualizar cartão não encontrado: {CardId}", id);
+            return null;
+        }
+        
+        card.Name = dto.Name;
+        card.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Cartão atualizado: {CardId}", id);
+        return card;
+    }
+    
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var card = await _context.Cards.FindAsync(id);
+        if (card == null)
+        {
+            _logger.LogWarning("Tentativa de deletar cartão não encontrado: {CardId}", id);
+            return false;
+        }
+        
+        _context.Cards.Remove(card);
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Cartão deletado: {CardId}", id);
+        return true;
+    }
+}
+
+// 4. Controller
+[ApiController]
+[Route("api/[controller]")]
+public class CardsController : ControllerBase
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ICardService _cardService;
+    private readonly ILogger<CardsController> _logger;
+    
+    public CardsController(
+        ApplicationDbContext context,
+        ICardService cardService,
+        ILogger<CardsController> logger)
+    {
+        _context = context;
+        _cardService = cardService;
+        _logger = logger;
+    }
+    
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<Card>>> GetAll([FromQuery] CardFilterRequest filter)
+    {
+        // GET direto no controller com DbContext
+        var query = _context.Cards.AsQueryable();
+        
+        // Aplicar filtros opcionais
+        if (!string.IsNullOrWhiteSpace(filter.SearchText))
+        {
+            query = query.Where(c => c.Name.Contains(filter.SearchText));
+        }
+        
+        // Exemplo: se tiver filtros específicos
+        // if (filter.IsActive.HasValue)
+        // {
+        //     query = query.Where(c => c.IsActive == filter.IsActive.Value);
+        // }
+        
+        var totalItems = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(c => c.CreatedAt)
+            .Skip((filter.PageNumber - 1) * filter.PageSize)
+            .Take(filter.PageSize)
+            .ToListAsync();
+            
+        return Ok(new PagedResponse<Card>
+        {
+            Items = items,
+            PageNumber = filter.PageNumber,
+            PageSize = filter.PageSize,
+            TotalItems = totalItems,
+            TotalPages = (int)Math.Ceiling(totalItems / (double)filter.PageSize)
+        });
+    }
+    
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Card>> GetById(int id)
+    {
+        // GET direto no controller com DbContext
+        var card = await _context.Cards.FindAsync(id);
+        if (card == null) return NotFound();
+        return Ok(card);
+    }
+    
+    [HttpPost]
+    public async Task<ActionResult<Card>> Create([FromBody] CreateCardDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        
+        // POST usa o service
+        var card = await _cardService.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = card.Id }, card);
+    }
+    
+    [HttpPut("{id}")]
+    public async Task<ActionResult<Card>> Update(int id, [FromBody] CreateCardDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        
+        // PUT usa o service
+        var card = await _cardService.UpdateAsync(id, dto);
+        if (card == null) return NotFound();
+        return Ok(card);
+    }
+    
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        // DELETE usa o service
+        var deleted = await _cardService.DeleteAsync(id);
+        if (!deleted) return NotFound();
+        return NoContent();
+    }
+}
+
+// 5. Registro no Program.cs
+builder.Services.AddScoped<ICardService, CardService>();
+```
+
+### Princípios Importantes
+- **Separação de responsabilidades**: GETs no controller (queries), comandos no service (writes)
+- **Services retornam entidades ou null**: Deixar o controller tratar NotFound
+- **Services retornam bool para deletes**: Indicar sucesso/falha
+- **Logging**: Todas as operações devem ter logs apropriados
+- **Validação**: ModelState no controller, validações de negócio no service
+
+## Domain Services vs Application Services
+
+### Diferenças Fundamentais
+
+#### Domain Services (`Domain/Services/`)
+- **Propósito**: Encapsular lógica de negócio complexa do domínio
+- **Responsabilidade**: Implementar regras de negócio que envolvem múltiplas entidades
+- **Persistência**: **NUNCA chama `SaveChangesAsync()`** - apenas cria/modifica objetos em memória
+- **Retorno**: Retorna entidades ou listas de entidades já configuradas
+- **Dependências**: Mínimas - apenas `DbContext` para leitura se absolutamente necessário, `ILogger`
+- **Registro DI**: `AddScoped<IDomainService, DomainService>()`
+- **Exemplo**: Calcular parcelas de cartão, aplicar regras de desconto, validar regras complexas
+
+```csharp
+// Domain Service - Apenas cálculos e lógica de negócio
+public class CreditCardInstallmentDomainService : ICreditCardInstallmentDomainService
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ILogger<CreditCardInstallmentDomainService> _logger;
+    
+    public async Task<List<CreditCardInstallment>> CreateInstallmentsAsync(Expense expense)
+    {
+        // 1. Buscar dados (READ-ONLY)
+        var card = await _context.Cards.FindAsync(expense.CardId);
+        
+        // 2. Calcular e criar objetos
+        var installments = new List<CreditCardInstallment>();
+        var firstDueDate = CalculateFirstDueDate(expense.Date, card.ClosingDay);
+        
+        for (int i = 1; i <= expense.InstallmentCount; i++)
+        {
+            installments.Add(new CreditCardInstallment
+            {
+                CardId = expense.CardId.Value,
+                ExpenseId = expense.Id,
+                InstallmentNumber = i,
+                // ... outras propriedades
+            });
+        }
+        
+        // 3. Retornar sem salvar
+        return installments;
+    }
+    
+    // Métodos privados com regras de negócio
+    private DateTime CalculateFirstDueDate(DateTime expenseDate, int closingDay)
+    {
+        // Lógica complexa de cálculo
+    }
+}
+```
+
+#### Application Services (`Application/Services/`)
+- **Propósito**: Orquestrar casos de uso da aplicação
+- **Responsabilidade**: Coordenar operações, validar entrada, persistir dados
+- **Persistência**: **SEMPRE chama `SaveChangesAsync()`** - responsável por transações
+- **Retorno**: Retorna entidades persistidas
+- **Dependências**: Pode ter múltiplas - DbContext, Domain Services, outros Application Services
+- **Registro DI**: `AddScoped<IApplicationService, ApplicationService>()`
+- **Exemplo**: Criar despesa, atualizar usuário, processar pagamento
+
+```csharp
+// Application Service - Orquestra e persiste
+public class ExpenseService : IExpenseService
+{
+    private readonly ApplicationDbContext _context;
+    private readonly ICreditCardInstallmentDomainService _installmentService;
+    private readonly ILogger<ExpenseService> _logger;
+    
+    public async Task<Expense> CreateAsync(CreateExpenseDto dto)
+    {
+        // 1. Validações de aplicação
+        var establishmentExists = await _context.Establishments.AnyAsync(e => e.Id == dto.EstablishmentId);
+        if (!establishmentExists)
+            throw new InvalidOperationException("Estabelecimento não encontrado");
+        
+        // 2. Criar entidade principal
+        var expense = new Expense
+        {
+            Description = dto.Description,
+            Amount = dto.Amount,
+            Date = dto.Date,
+            // ... outras propriedades
+        };
+        
+        // 3. Persistir entidade principal
+        _context.Expenses.Add(expense);
+        await _context.SaveChangesAsync();
+        
+        // 4. Se necessário, chamar Domain Service
+        if (dto.PaymentType == PaymentType.CreditCard)
+        {
+            var installments = await _installmentService.CreateInstallmentsAsync(expense);
+            
+            // 5. Persistir resultado do Domain Service
+            await _context.CreditCardInstallments.AddRangeAsync(installments);
+            await _context.SaveChangesAsync();
+        }
+        
+        return expense;
+    }
+}
+```
+
+### Quando Usar Domain Service?
+✅ **Use Domain Service quando:**
+- Lógica envolve múltiplas entidades
+- Cálculos complexos baseados em regras de negócio
+- Validações que dependem de estado de múltiplas entidades
+- Algoritmos específicos do domínio (ex: calcular parcelas, aplicar juros)
+
+❌ **NÃO use Domain Service para:**
+- CRUD simples de uma entidade
+- Apenas validar entrada de dados
+- Operações que só precisam persistir dados
+- Queries simples
+
+### Checklist de Domain Service
+- [ ] Interface está em `Domain/Abstractions/`
+- [ ] Implementação está em `Domain/Services/`
+- [ ] **NÃO chama `SaveChangesAsync()`**
+- [ ] Retorna objetos criados/modificados (não persiste)
+- [ ] Tem logs de debug para rastreamento
+- [ ] Validações de negócio estão presentes
+- [ ] Métodos privados encapsulam lógica complexa
+- [ ] Registrado no DI como `Scoped`
+
+### Checklist de Application Service
+- [ ] Interface está em `Domain/Abstractions/ApplicationServices/`
+- [ ] Implementação está em `Application/Services/`
+- [ ] **Chama `SaveChangesAsync()`** para persistir
+- [ ] Valida entrada antes de processar
+- [ ] Pode injetar Domain Services
+- [ ] Orquestra múltiplas operações se necessário
+- [ ] Trata exceções apropriadamente
+- [ ] Registrado no DI como `Scoped`
+
+## Próximos Passos
+- Implementar autentica��o e autoriza��o
+- Configurar CI/CD pipeline
+- Adicionar documenta��o da API (Swagger)
+- Implementar logging e monitoramento
+- Configurar Docker para containeriza��o
+
+---
+
+**Nota**: Este documento deve ser atualizado conforme o projeto evolui. Sempre mantenha as instru��es alinhadas com as pr�ticas atuais do time.
