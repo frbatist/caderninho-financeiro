@@ -36,7 +36,14 @@ export default function UserSelectionScreen({ navigation }: UserSelectionScreenP
   const loadUsers = async () => {
     setLoading(true);
     try {
+      console.log('[UserSelection] Iniciando busca de usuários...');
+      console.log('[UserSelection] Chamando CaderninhoApiService.users.getAll()');
+      
       const userList = await CaderninhoApiService.users.getAll();
+      
+      console.log('[UserSelection] Usuários recebidos:', userList.length);
+      console.log('[UserSelection] Dados:', JSON.stringify(userList));
+      
       setUsers(userList);
       
       if (userList.length === 0) {
@@ -46,11 +53,23 @@ export default function UserSelectionScreen({ navigation }: UserSelectionScreenP
           [{ text: 'OK' }]
         );
       }
-    } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
+    } catch (error: any) {
+      console.error('[UserSelection] Erro ao carregar usuários:', error);
+      console.error('[UserSelection] Erro message:', error.message);
+      console.error('[UserSelection] Erro stack:', error.stack);
+      console.error('[UserSelection] Erro response:', error.response);
+      console.error('[UserSelection] Erro request:', error.request);
+      
       Alert.alert(
         'Erro',
-        'Não foi possível carregar os usuários. Verifique a conexão com o backend.',
+        `Não foi possível carregar os usuários. 
+        
+Erro: ${error.message}
+        
+Verifique:
+- A conexão com o backend
+- Se você está na mesma rede
+- Se o IP está correto: 10.0.0.131`,
         [{ text: 'Tentar Novamente', onPress: loadUsers }]
       );
     } finally {
@@ -104,6 +123,14 @@ export default function UserSelectionScreen({ navigation }: UserSelectionScreenP
         <Text style={styles.headerSubtitle}>
           Selecione seu usuário para continuar
         </Text>
+        
+        {/* Botão de Debug */}
+        <TouchableOpacity 
+          style={styles.debugButton}
+          onPress={() => navigation.navigate('Debug')}
+        >
+          <Text style={styles.debugButtonText}>🔧 Debug</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Lista de usuários */}
@@ -190,6 +217,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     opacity: 0.9,
+  },
+  debugButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  debugButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   userList: {
     flex: 1,

@@ -32,7 +32,11 @@ apiClient.interceptors.request.use(
     //   config.headers.Authorization = `Bearer ${token}`;
     // }
     
+    const fullUrl = (config.baseURL || '') + (config.url || '');
     console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`);
+    console.log(`[API Request] Full URL: ${fullUrl}`);
+    console.log(`[API Request] Base URL: ${config.baseURL}`);
+    console.log(`[API Request] Headers:`, JSON.stringify(config.headers));
     return config;
   },
   (error) => {
@@ -48,15 +52,21 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     console.log(`[API Response] ${response.status} ${response.config.url}`);
+    console.log(`[API Response] Data:`, JSON.stringify(response.data).substring(0, 200));
     return response;
   },
   (error) => {
     if (error.response) {
       // Erro retornado pela API
       console.error(`[API Error] ${error.response.status}:`, error.response.data);
+      console.error(`[API Error] URL:`, error.config?.url);
+      console.error(`[API Error] Full URL:`, error.config?.baseURL + error.config?.url);
     } else if (error.request) {
       // Erro de rede (sem resposta)
-      console.error('[Network Error]', error.message);
+      console.error('[Network Error] Message:', error.message);
+      console.error('[Network Error] Code:', error.code);
+      console.error('[Network Error] Request URL:', error.config?.url);
+      console.error('[Network Error] Full URL:', error.config?.baseURL + error.config?.url);
       if (error.code === 'ECONNABORTED') {
         console.error('[Timeout] Request timed out after', API_TIMEOUT, 'ms');
       }

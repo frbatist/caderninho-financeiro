@@ -13,6 +13,7 @@ import UserStorageService from '../services/userStorageService';
 // Import das telas
 import UserSelectionScreen from '../screens/UserSelectionScreen';
 import HomeScreen from '../screens/HomeScreen';
+import DebugScreen from '../screens/DebugScreen';
 import ExpensesScreen from '../screens/ExpensesScreen';
 import AddExpenseScreen from '../screens/AddExpenseScreen';
 import MonthlyEntriesScreen from '../screens/MonthlyEntriesScreen';
@@ -81,6 +82,14 @@ export default function Navigation() {
           name="Home" 
           component={HomeScreen}
           options={{ title: 'Caderninho Financeiro' }}
+        />
+        <Stack.Screen 
+          name="Debug" 
+          component={DebugScreen}
+          options={{ 
+            title: 'Debug',
+            headerShown: false,
+          }}
         />
         <Stack.Screen 
           name="Expenses" 

@@ -1,30 +1,47 @@
 {
-  "expo": {
-    "name": "MobileApp",
-    "slug": "MobileApp",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
-  }
+    "expo":  {
+                 "name":  "Caderninho Financeiro",
+                 "slug":  "caderninho-financeiro",
+                 "version":  "1.0.3",
+                 "orientation":  "portrait",
+                 "icon":  "./assets/icon.png",
+                 "userInterfaceStyle":  "light",
+                 "newArchEnabled":  true,
+                 "splash":  {
+                                "image":  "./assets/splash-icon.png",
+                                "resizeMode":  "contain",
+                                "backgroundColor":  "#ffffff"
+                            },
+                 "ios":  {
+                             "supportsTablet":  true,
+                             "bundleIdentifier":  "com.caderninho.financeiro"
+                         },
+                 "android":  {
+                                 "adaptiveIcon":  {
+                                                      "foregroundImage":  "./assets/adaptive-icon.png",
+                                                      "backgroundColor":  "#ffffff"
+                                                  },
+                                 "edgeToEdgeEnabled":  true,
+                                 "predictiveBackGestureEnabled":  false,
+                                 "package":  "com.caderninho.financeiro",
+                                 "versionCode":  4,
+                                 "permissions":  [
+                                                     "INTERNET"
+                                                 ]
+                             },
+                 "web":  {
+                             "favicon":  "./assets/favicon.png"
+                         },
+                 "plugins":  [
+
+                             ],
+                 "extra":  {
+                               "apiUrl":  "http://10.0.0.131:5000",
+                               "updateUrl":  "http://10.0.0.131:8080/updates",
+                               "eas":  {
+                                           "projectId":  "aa4f8dd2-e217-4e77-95a7-2ed385d777f8"
+                                       }
+                           },
+                 "owner":  "frbatist"
+             }
 }

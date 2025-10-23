@@ -10,6 +10,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
 import UserStorageService from '../services/userStorageService';
 import CaderninhoApiService, { User, MonthlyEntry, OperationType, PaymentType } from '../services/caderninhoApiService';
+import UpdateService from '../services/updateService';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -27,6 +28,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     useCallback(() => {
       loadUser();
       loadFinancialData();
+      checkForUpdates();
     }, [])
   );
 
@@ -39,6 +41,20 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       setCurrentUser(user);
     } catch (error) {
       console.error('Erro ao carregar usuário:', error);
+    }
+  };
+
+  /**
+   * Verifica se há atualizações disponíveis
+   */
+  const checkForUpdates = async () => {
+    try {
+      // Verifica atualizações em background (não bloqueia a UI)
+      setTimeout(() => {
+        UpdateService.checkAndNotify();
+      }, 2000); // Aguarda 2 segundos após carregar a tela
+    } catch (error) {
+      console.error('Erro ao verificar atualizações:', error);
     }
   };
 

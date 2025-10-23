@@ -234,7 +234,11 @@ export interface MonthlySpendingLimitFilterRequest extends FilterRequest {
  */
 export class UsersService {
   static async getAll(): Promise<User[]> {
-    return apiService.get<User[]>(API_ENDPOINTS.USERS);
+    console.log('[UsersService] getAll() chamado');
+    console.log('[UsersService] Endpoint:', API_ENDPOINTS.USERS);
+    const result = await apiService.get<User[]>(API_ENDPOINTS.USERS);
+    console.log('[UsersService] Resultado recebido:', result);
+    return result;
   }
 
   static async getById(id: number): Promise<User> {

@@ -39,3 +39,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# APK builds (não commitar binários)
+apk/*.apk
+apk/*.aab
+apk/latest.json
+docker/builds/

@@ -23,7 +23,6 @@
 **/values.dev.yaml
 LICENSE
 README.md
-**/Migrations/**/*.cs
 **/*.db
 **/*.db-shm
 **/*.db-wal

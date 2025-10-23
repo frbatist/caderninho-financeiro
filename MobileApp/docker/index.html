@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caderninho Financeiro - Downloads</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .version-info {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .version-info h2 {
+            color: #667eea;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        
+        .version-info p {
+            color: #666;
+            margin: 5px 0;
+        }
+        
+        .download-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        
+        .instructions {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+            color: #666;
+        }
+        
+        .instructions li {
+            margin: 10px 0;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .warning p {
+            color: #856404;
+            margin: 0;
+        }
+        
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .qr-code img {
+            max-width: 200px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Caderninho Financeiro</h1>
+        <p class="subtitle">Baixe o app Android</p>
+        
+        <div class="version-info" id="versionInfo">
+            <h2>Versão Atual</h2>
+            <p><strong>Versão:</strong> <span id="version">Carregando...</span></p>
+            <p><strong>Data:</strong> <span id="buildDate">Carregando...</span></p>
+            <p><strong>Tamanho:</strong> <span id="fileSize">Carregando...</span></p>
+        </div>
+        
+        <a href="#" class="download-btn" id="downloadBtn">
+            📥 Baixar APK (Android)
+        </a>
+        
+        <a href="/apk/" class="download-btn btn-secondary">
+            📂 Ver Todas as Versões
+        </a>
+        
+        <div class="warning">
+            <p><strong>⚠️ Atenção:</strong> Você precisará permitir a instalação de apps de fontes desconhecidas nas configurações do Android.</p>
+        </div>
+        
+        <div class="instructions">
+            <h3>Como instalar:</h3>
+            <ol>
+                <li>Baixe o arquivo APK clicando no botão acima</li>
+                <li>Abra o arquivo baixado no seu Android</li>
+                <li>Se solicitado, permita instalação de fontes desconhecidas</li>
+                <li>Siga as instruções na tela</li>
+                <li>Pronto! O app está instalado 🎉</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        // Buscar informações da última versão
+        async function loadVersionInfo() {
+            try {
+                const response = await fetch('/updates/latest.json');
+                const data = await response.json();
+                
+                document.getElementById('version').textContent = data.version;
+                document.getElementById('buildDate').textContent = new Date(data.buildDate).toLocaleString('pt-BR');
+                document.getElementById('fileSize').textContent = formatBytes(data.size);
+                document.getElementById('downloadBtn').href = data.url;
+            } catch (error) {
+                console.error('Erro ao carregar versão:', error);
+                document.getElementById('version').textContent = '1.0.0';
+                document.getElementById('buildDate').textContent = new Date().toLocaleString('pt-BR');
+                document.getElementById('fileSize').textContent = 'N/A';
+                document.getElementById('downloadBtn').href = '/apk/';
+            }
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        loadVersionInfo();
+    </script>
+</body>
+</html>

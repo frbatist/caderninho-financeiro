@@ -7,7 +7,7 @@
 // URL base da API
 // Para desenvolvimento local: use o IP da sua máquina (não use localhost no dispositivo físico)
 // Exemplo: 'http://192.168.1.100:5054/api' ou 'http://seu-ip:porta/api'
-export const API_BASE_URL = 'http://localhost:5054/api';
+export const API_BASE_URL = 'http://10.0.0.131:5000/api';
 
 // Timeout para requisições (em milissegundos)
 // Aumentado para 60 segundos para facilitar debug
