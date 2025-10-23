@@ -13,6 +13,10 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// Adicionar Swagger UI
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 // Configurar CORS para aceitar qualquer origem (apenas para ambiente local)
 builder.Services.AddCors(options =>
 {
@@ -77,10 +81,25 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Habilitar Swagger em todos os ambientes (útil para desenvolvimento e testes)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.MapOpenApi();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Caderninho API V1");
+    c.RoutePrefix = "swagger"; // Acesso via /swagger
+});
+
+app.MapOpenApi();
+
+// Health check endpoint
+app.MapGet("/health", () => Results.Ok(new 
+{ 
+    status = "healthy", 
+    timestamp = DateTime.UtcNow,
+    environment = app.Environment.EnvironmentName
+}))
+.WithName("HealthCheck")
+.WithOpenApi();
 
 // Habilitar CORS
 app.UseCors("AllowAll");

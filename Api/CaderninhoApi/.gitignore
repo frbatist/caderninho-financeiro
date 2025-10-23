@@ -56,3 +56,8 @@ Migrations/
 *.pidb
 *.svclog
 *.scc
+
+# Environment variables (credenciais)
+.env
+.env.local
+deploy.env
