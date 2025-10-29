@@ -155,6 +155,38 @@ public class ExpensesController : ControllerBase
     }
 
     /// <summary>
+    /// Importa fatura de cartão de crédito a partir de um CSV
+    /// </summary>
+    /// <param name="request">Dados da importação com ID do cartão e linhas da fatura</param>
+    /// <returns>Lista de despesas criadas</returns>
+    [HttpPost("import-card-invoice")]
+    public async Task<ActionResult<List<Expense>>> ImportCardInvoice([FromBody] ImportCardInvoiceRequest request)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var expenses = await _expenseService.ImportCardInvoiceAsync(request);
+
+            _logger.LogInformation("Fatura importada com sucesso. {Count} despesas criadas", expenses.Count);
+            return Ok(expenses);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Erro de validação ao importar fatura");
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao importar fatura");
+            return StatusCode(500, "Erro interno do servidor");
+        }
+    }
+
+    /// <summary>
     /// Deleta uma despesa por ID
     /// </summary>
     /// <param name="id">ID da despesa</param>
