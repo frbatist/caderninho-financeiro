@@ -2,7 +2,27 @@
 
 Aplicativo mobile desenvolvido com React Native e Expo para controle financeiro pessoal.
 
-## 🚀 Tecnologias
+## � Documentação
+
+- **[BUILD_LOCAL_GUIDE.md](BUILD_LOCAL_GUIDE.md)** - ⭐ Build Local + Deploy Automático (Recomendado)
+- **[BUILD_DEPLOY_GUIDE.md](BUILD_DEPLOY_GUIDE.md)** - Build via Nuvem Expo + Deploy Manual
+- **[APK_README.md](APK_README.md)** - Quick Start resumido
+
+## 🚀 Quick Start - Build e Deploy
+
+**Comando único** para compilar localmente e fazer deploy no Raspberry Pi:
+
+```powershell
+.\build-local.ps1 -CopyToApk
+```
+
+✅ Compila o APK localmente (4-5 min)  
+✅ Upload automático para Raspberry Pi  
+✅ Disponível em: http://10.0.0.131:8080
+
+---
+
+## �🚀 Tecnologias
 
 - **React Native**: Framework para desenvolvimento mobile
 - **Expo**: Plataforma para desenvolvimento e build

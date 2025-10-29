@@ -29,7 +29,13 @@ Leia: **[BUILD_DEPLOY_GUIDE.md](BUILD_DEPLOY_GUIDE.md)**
 ## ⚡ Comandos Rápidos
 
 ```powershell
-# Build apenas (sem deploy)
+# Build LOCAL + Deploy automático (Recomendado)
+.\build-local.ps1 -CopyToApk
+
+# Build LOCAL sem deploy
+.\build-local.ps1 -CopyToApk -SkipDeploy
+
+# Build na NUVEM Expo (tem limite/fila)
 .\build-apk.ps1 -BuildOnly
 
 # Deploy apenas (APK já existe)

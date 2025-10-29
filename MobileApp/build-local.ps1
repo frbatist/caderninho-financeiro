@@ -4,10 +4,34 @@
 
 param(
     [switch]$SkipChecks,
-    [switch]$CopyToApk
+    [switch]$CopyToApk,
+    [string]$RaspberryPiHost = "10.0.0.131",
+    [string]$RaspberryPiUser = "frbatist",
+    [string]$RaspberryPiPassword,
+    [switch]$SkipDeploy
 )
 
 $ErrorActionPreference = "Stop"
+
+# Carregar .env se existir (na pasta Api/CaderninhoApi)
+$EnvFile = Join-Path (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) "Api") "CaderninhoApi") ".env"
+if (Test-Path $EnvFile) {
+    Get-Content $EnvFile | ForEach-Object {
+        $line = $_.Trim()
+        if ($line.Length -gt 0 -and -not $line.StartsWith('#')) {
+            if ($line -match '^([A-Z_]+)=(.*)$') {
+                $name = $matches[1]
+                $value = $matches[2].Trim()
+                if ($value.StartsWith('"') -and $value.EndsWith('"')) {
+                    $value = $value.Substring(1, $value.Length - 2)
+                }
+                if ($name -eq "RASPBERRY_PI_HOST" -and -not $RaspberryPiHost) { $script:RaspberryPiHost = $value }
+                if ($name -eq "RASPBERRY_PI_USER" -and -not $RaspberryPiUser) { $script:RaspberryPiUser = $value }
+                if ($name -eq "RASPBERRY_PI_PASSWORD" -and -not $RaspberryPiPassword) { $script:RaspberryPiPassword = $value }
+            }
+        }
+    }
+}
 
 Write-Host @"
 
@@ -16,6 +40,16 @@ Write-Host @"
 =============================================
 
 "@ -ForegroundColor Cyan
+
+function Write-Step {
+    param([string]$Message)
+    Write-Host "`n==> $Message" -ForegroundColor Cyan
+}
+
+function Write-Success {
+    param([string]$Message)
+    Write-Host "[OK] $Message" -ForegroundColor Green
+}
 
 # Função para adicionar ao PATH temporariamente
 function Add-ToPath {
@@ -166,40 +200,128 @@ try {
         
         # Copiar para a pasta apk/
         if ($CopyToApk) {
-            Write-Host "`n==> Copiando APK para pasta apk/..." -ForegroundColor Cyan
+            Write-Step "Copiando APK para pasta apk/..."
             
             if (-not (Test-Path "apk")) {
                 New-Item -ItemType Directory -Path "apk" | Out-Null
             }
             
+            # Ler versão do app.json
+            $appJsonPath = Join-Path $PSScriptRoot "app.json"
+            $appJson = Get-Content $appJsonPath -Raw | ConvertFrom-Json
+            $version = $appJson.expo.version
+            
             $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-            $destApk = "apk\caderninho-$timestamp.apk"
+            $destApk = "apk\caderninho-v$version-$timestamp.apk"
             Copy-Item $apkPath $destApk
             
-            Write-Host "[OK] APK copiado para: $destApk" -ForegroundColor Green
+            Write-Success "APK copiado para: $destApk"
+            
+            # Deploy no Raspberry Pi (a menos que seja explicitamente pulado)
+            if (-not $SkipDeploy) {
+                Write-Step "Preparando deploy para Raspberry Pi..."
+                
+                # Criar metadados latest.json
+                $metadata = @{
+                    version = $version
+                    buildDate = (Get-Date).ToString("o")
+                    size = (Get-Item $destApk).Length
+                    url = "/apk/$(Split-Path $destApk -Leaf)"
+                    fileName = Split-Path $destApk -Leaf
+                } | ConvertTo-Json
+                
+                $metadata | Out-File -FilePath "apk\latest.json" -Encoding UTF8
+                
+                Write-Step "Fazendo deploy no Raspberry Pi ($RaspberryPiHost)..."
+                
+                try {
+                    # Criar estrutura no Pi
+                    Write-Host "Criando diretórios no Raspberry Pi..." -ForegroundColor Yellow
+                    ssh "$RaspberryPiUser@$RaspberryPiHost" "mkdir -p ~/caderninho-apk/apk ~/caderninho-apk/updates"
+                    
+                    # Copiar APK e metadados
+                    Write-Host "Copiando APK e metadados..." -ForegroundColor Yellow
+                    scp "$destApk" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/apk/"
+                    scp "apk\latest.json" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/apk/"
+                    scp "apk\latest.json" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/updates/"
+                    
+                    # Copiar arquivos Docker (se for primeira vez)
+                    $dockerDir = Join-Path $PSScriptRoot "docker"
+                    if (Test-Path $dockerDir) {
+                        Write-Host "Copiando configurações Docker..." -ForegroundColor Yellow
+                        scp "$dockerDir\Dockerfile" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/"
+                        scp "$dockerDir\nginx.conf" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/"
+                        scp "$dockerDir\index.html" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/"
+                    }
+                    
+                    Write-Step "Iniciando/Atualizando container no Raspberry Pi..."
+                    
+                    $remoteScript = @"
+cd ~/caderninho-apk
+
+# Verificar se container existe
+if docker ps -a | grep -q caderninho-apk; then
+    echo "Container existente encontrado"
+    # Se já existe, apenas reinicia (mantém a imagem)
+    docker restart caderninho-apk
+else
+    echo "Criando novo container"
+    # Build da imagem
+    docker build -t caderninho-apk:latest .
+    
+    # Iniciar container
+    docker run -d \
+      --name caderninho-apk \
+      --restart unless-stopped \
+      -p 8080:8080 \
+      -v ~/caderninho-apk/apk:/usr/share/nginx/html/apk \
+      -v ~/caderninho-apk/updates:/usr/share/nginx/html/updates \
+      caderninho-apk:latest
+fi
+
+sleep 2
+docker ps | grep caderninho-apk && echo "" && echo "[OK] Container ativo!"
+"@
+                    
+                    $remoteScript -replace "`r`n", "`n" | ssh "$RaspberryPiUser@$RaspberryPiHost" 'bash -s'
+                    
+                    Write-Success "Deploy concluído!"
+                    Write-Host ""
+                    Write-Host "🎉 APK disponível para download:" -ForegroundColor Cyan
+                    Write-Host "  📥 http://$RaspberryPiHost:8080" -ForegroundColor Green
+                    Write-Host "  📂 http://$RaspberryPiHost:8080/apk/" -ForegroundColor Green
+                    Write-Host ""
+                    
+                } catch {
+                    Write-Host "`n[AVISO] Falha no deploy automático: $($_.Exception.Message)" -ForegroundColor Yellow
+                    Write-Host "Você pode fazer deploy manual depois com:" -ForegroundColor Yellow
+                    Write-Host "  .\build-apk.ps1 -DeployOnly" -ForegroundColor Cyan
+                    Write-Host ""
+                }
+            }
         }
         
-        Write-Host @"
+        if (-not $CopyToApk) {
+            Write-Host @"
 
 ==============================================
 PRÓXIMOS PASSOS:
 ==============================================
 
-1. Transferir APK para o dispositivo Android:
-   - Via cabo USB: copie o arquivo $apkPath
-   - Via rede: use o servidor NGINX (copie para apk/)
-
-2. Instalar no dispositivo:
-   - Localize o arquivo .apk no dispositivo
-   - Toque para instalar
-   - Permita instalação de fontes desconhecidas
-
-3. Build rápido para próximas vezes:
+1. Copiar e fazer deploy automático:
    .\build-local.ps1 -CopyToApk
+
+2. Ou copiar apenas (sem deploy):
+   .\build-local.ps1 -CopyToApk -SkipDeploy
+
+3. Instalar manualmente via USB:
+   - Copie: $apkPath
+   - Transfira para o dispositivo Android
 
 ==============================================
 
 "@ -ForegroundColor Cyan
+        }
     } else {
         Write-Host "[ERRO] APK não foi gerado!" -ForegroundColor Red
         exit 1
