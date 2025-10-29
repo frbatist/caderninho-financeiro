@@ -30,6 +30,10 @@ public class EstablishmentConfiguration : IEntityTypeConfiguration<Establishment
             .HasConversion<int>()
             .IsRequired();
 
+        builder.Property(e => e.CardInvoiceName)
+            .HasMaxLength(200)
+            .IsRequired(false);
+
         builder.Property(e => e.CreatedAt)
             .IsRequired();
 

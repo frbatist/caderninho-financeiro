@@ -19,4 +19,10 @@ public class Establishment : BaseEntity
     /// </summary>
     [Display(Name = "Tipo do Estabelecimento")]
     public EstablishmentType Type { get; set; }
+
+    /// <summary>
+    /// Nome da fatura de cartão associada ao estabelecimento
+    /// </summary>
+    [Display(Name = "Nome da Fatura")]
+    public string? CardInvoiceName { get; set; }
 }
