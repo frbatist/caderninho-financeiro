@@ -1,0 +1,27 @@
+services:
+  # Aplicação Web do Caderninho Financeiro
+  caderninho-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: caderninho-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - caderninho-network
+    labels:
+      - "com.caderninho.app=web"
+      - "com.caderninho.version=1.0.0"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  caderninho-network:
+    driver: bridge

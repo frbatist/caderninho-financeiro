@@ -47,13 +47,13 @@ public class ExpensesController : ControllerBase
             // Aplicar filtro por ano se fornecido
             if (filter.Year.HasValue)
             {
-                query = query.Where(e => e.CreatedAt.Year == filter.Year.Value);
+                query = query.Where(e => e.Date.Year == filter.Year.Value);
             }
 
             // Aplicar filtro por mês se fornecido
             if (filter.Month.HasValue)
             {
-                query = query.Where(e => e.CreatedAt.Month == filter.Month.Value);
+                query = query.Where(e => e.Date.Month == filter.Month.Value);
             }
 
             // Contar total de itens antes da paginação
@@ -62,9 +62,9 @@ public class ExpensesController : ControllerBase
             // Calcular total de páginas
             var totalPages = (int)Math.Ceiling(totalItems / (double)filter.PageSize);
 
-            // Aplicar paginação
+            // Aplicar paginação e ordenar por data da despesa (mais recente primeiro)
             var expenses = await query
-                .OrderByDescending(e => e.CreatedAt)
+                .OrderByDescending(e => e.Date)
                 .Skip((filter.PageNumber - 1) * filter.PageSize)
                 .Take(filter.PageSize)
                 .ToListAsync();
