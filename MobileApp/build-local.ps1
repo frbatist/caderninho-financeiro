@@ -13,9 +13,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Carregar .env se existir (na pasta Api/CaderninhoApi)
-$EnvFile = Join-Path (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) "Api") "CaderninhoApi") ".env"
+# Carregar .env se existir (procura primeiro na pasta MobileApp, depois na pasta Api/CaderninhoApi)
+$EnvFile = Join-Path $PSScriptRoot ".env"
+if (-not (Test-Path $EnvFile)) {
+    $EnvFile = Join-Path (Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) "Api") "CaderninhoApi") ".env"
+}
+
 if (Test-Path $EnvFile) {
+    Write-Host "Carregando configurações de: $EnvFile" -ForegroundColor Cyan
     Get-Content $EnvFile | ForEach-Object {
         $line = $_.Trim()
         if ($line.Length -gt 0 -and -not $line.StartsWith('#')) {
@@ -25,12 +30,16 @@ if (Test-Path $EnvFile) {
                 if ($value.StartsWith('"') -and $value.EndsWith('"')) {
                     $value = $value.Substring(1, $value.Length - 2)
                 }
-                if ($name -eq "RASPBERRY_PI_HOST" -and -not $RaspberryPiHost) { $script:RaspberryPiHost = $value }
-                if ($name -eq "RASPBERRY_PI_USER" -and -not $RaspberryPiUser) { $script:RaspberryPiUser = $value }
-                if ($name -eq "RASPBERRY_PI_PASSWORD" -and -not $RaspberryPiPassword) { $script:RaspberryPiPassword = $value }
+                if ($value.StartsWith("'") -and $value.EndsWith("'")) {
+                    $value = $value.Substring(1, $value.Length - 2)
+                }
+                if ($name -eq "RASPBERRY_PI_HOST") { $script:RaspberryPiHost = $value }
+                if ($name -eq "RASPBERRY_PI_USER") { $script:RaspberryPiUser = $value }
+                if ($name -eq "RASPBERRY_PI_PASSWORD") { $script:RaspberryPiPassword = $value }
             }
         }
     }
+    Write-Host "  OK Credenciais carregadas do .env" -ForegroundColor Green
 }
 
 Write-Host @"
@@ -49,6 +58,43 @@ function Write-Step {
 function Write-Success {
     param([string]$Message)
     Write-Host "[OK] $Message" -ForegroundColor Green
+}
+
+# Função para executar SSH com autenticação
+function Invoke-SSH {
+    param(
+        [string]$User,
+        [string]$Host,
+        [string]$Password,
+        [string]$Command
+    )
+    
+    if ($Password -and (Get-Command plink -ErrorAction SilentlyContinue)) {
+        # Usar plink com senha
+        $Command -replace "`r`n", "`n" | plink -ssh -batch -pw $Password "$User@$Host"
+    } else {
+        # SSH padrão
+        $Command -replace "`r`n", "`n" | ssh "$User@$Host" 'bash -s'
+    }
+}
+
+# Função para executar SCP com autenticação
+function Invoke-SCP {
+    param(
+        [string]$User,
+        [string]$Host,
+        [string]$Password,
+        [string]$Source,
+        [string]$Destination
+    )
+    
+    if ($Password -and (Get-Command pscp -ErrorAction SilentlyContinue)) {
+        # Usar pscp com senha
+        pscp -batch -pw $Password $Source "$User@$Host`:$Destination"
+    } else {
+        # SCP padrão
+        scp $Source "$User@$Host`:$Destination"
+    }
 }
 
 # Função para adicionar ao PATH temporariamente
@@ -234,24 +280,41 @@ try {
                 
                 Write-Step "Fazendo deploy no Raspberry Pi ($RaspberryPiHost)..."
                 
+                # Verificar se temos plink/pscp para autenticação com senha
+                if ($RaspberryPiPassword) {
+                    if (-not (Get-Command plink -ErrorAction SilentlyContinue)) {
+                        Write-Host ""
+                        Write-Host "AVISO: Senha configurada mas 'plink' não está instalado!" -ForegroundColor Yellow
+                        Write-Host "Para evitar digitar senha várias vezes, instale PuTTY:" -ForegroundColor Cyan
+                        Write-Host "  winget install PuTTY.PuTTY" -ForegroundColor White
+                        Write-Host ""
+                        Write-Host "Continuando com SSH padrão (pode pedir senha)..." -ForegroundColor Yellow
+                        Write-Host ""
+                    } else {
+                        Write-Host "  OK Usando autenticação com senha (plink/pscp)" -ForegroundColor Green
+                    }
+                }
+                
                 try {
                     # Criar estrutura no Pi
                     Write-Host "Criando diretórios no Raspberry Pi..." -ForegroundColor Yellow
-                    ssh "$RaspberryPiUser@$RaspberryPiHost" "mkdir -p ~/caderninho-apk/apk ~/caderninho-apk/updates"
+                    Invoke-SSH -User $RaspberryPiUser -Host $RaspberryPiHost -Password $RaspberryPiPassword -Command "mkdir -p ~/caderninho-apk/apk ~/caderninho-apk/updates"
                     
                     # Copiar APK e metadados
-                    Write-Host "Copiando APK e metadados..." -ForegroundColor Yellow
-                    scp "$destApk" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/apk/"
-                    scp "apk\latest.json" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/apk/"
-                    scp "apk\latest.json" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/updates/"
+                    Write-Host "Copiando APK..." -ForegroundColor Yellow
+                    Invoke-SCP -User $RaspberryPiUser -Host $RaspberryPiHost -Password $RaspberryPiPassword -Source "$destApk" -Destination "~/caderninho-apk/apk/"
+                    
+                    Write-Host "Copiando metadados..." -ForegroundColor Yellow
+                    Invoke-SCP -User $RaspberryPiUser -Host $RaspberryPiHost -Password $RaspberryPiPassword -Source "apk\latest.json" -Destination "~/caderninho-apk/apk/"
+                    Invoke-SCP -User $RaspberryPiUser -Host $RaspberryPiHost -Password $RaspberryPiPassword -Source "apk\latest.json" -Destination "~/caderninho-apk/updates/"
                     
                     # Copiar arquivos Docker (se for primeira vez)
                     $dockerDir = Join-Path $PSScriptRoot "docker"
                     if (Test-Path $dockerDir) {
                         Write-Host "Copiando configurações Docker..." -ForegroundColor Yellow
-                        scp "$dockerDir\Dockerfile" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/"
-                        scp "$dockerDir\nginx.conf" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/"
-                        scp "$dockerDir\index.html" "$RaspberryPiUser@$RaspberryPiHost`:~/caderninho-apk/"
+                        Invoke-SCP -User $RaspberryPiUser -Host $RaspberryPiHost -Password $RaspberryPiPassword -Source "$dockerDir\Dockerfile" -Destination "~/caderninho-apk/"
+                        Invoke-SCP -User $RaspberryPiUser -Host $RaspberryPiHost -Password $RaspberryPiPassword -Source "$dockerDir\nginx.conf" -Destination "~/caderninho-apk/"
+                        Invoke-SCP -User $RaspberryPiUser -Host $RaspberryPiHost -Password $RaspberryPiPassword -Source "$dockerDir\index.html" -Destination "~/caderninho-apk/"
                     }
                     
                     Write-Step "Iniciando/Atualizando container no Raspberry Pi..."
@@ -283,7 +346,7 @@ sleep 2
 docker ps | grep caderninho-apk && echo "" && echo "[OK] Container ativo!"
 "@
                     
-                    $remoteScript -replace "`r`n", "`n" | ssh "$RaspberryPiUser@$RaspberryPiHost" 'bash -s'
+                    Invoke-SSH -User $RaspberryPiUser -Host $RaspberryPiHost -Password $RaspberryPiPassword -Command $remoteScript
                     
                     Write-Success "Deploy concluído!"
                     Write-Host ""

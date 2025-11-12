@@ -28,10 +28,37 @@
 
 ## 📋 Pré-requisitos (já instalados)
 
-- ✅ Node.js v22.18.0
+- ✅ Node.js v22.18.0 (ou superior)
 - ✅ Java JDK 17 (C:\Program Files\Microsoft\jdk-17.0.16.8-hotspot)
 - ✅ Android SDK (%LOCALAPPDATA%\Android\Sdk)
-- ✅ SSH configurado para o Raspberry Pi
+- ✅ PuTTY (plink/pscp) para autenticação SSH automática
+
+### Configuração do .env (Importante!)
+
+Para deploy automático sem precisar digitar senha várias vezes:
+
+```powershell
+# 1. Copiar arquivo de exemplo
+cp .env.example .env
+
+# 2. Editar .env e adicionar suas credenciais
+# RASPBERRY_PI_HOST=10.0.0.131
+# RASPBERRY_PI_USER=frbatist
+# RASPBERRY_PI_PASSWORD=sua_senha_aqui
+```
+
+### Instalar PuTTY (se ainda não tiver)
+
+```powershell
+# Opção 1: Via winget
+winget install PuTTY.PuTTY
+
+# Opção 2: Via Chocolatey
+choco install putty
+
+# Opção 3: Download manual
+# https://www.putty.org/
+```
 
 ---
 

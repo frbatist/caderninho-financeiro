@@ -83,7 +83,7 @@ sudo systemctl restart docker
 
 ```powershell
 # Navegar até o diretório do projeto
-cd C:\Users\fbati\source\repos\caderninho-financeiro\Api\CaderninhoApi
+cd C:\dev\caderninho\Api\CaderninhoApi
 
 # Deploy completo (build + push + deploy remoto)
 .\deploy.ps1 -RemoteDeploy

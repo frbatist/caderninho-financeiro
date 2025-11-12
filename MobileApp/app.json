@@ -2,7 +2,7 @@
     "expo":  {
                  "name":  "Caderninho Financeiro",
                  "slug":  "caderninho-financeiro",
-                 "version":  "1.0.3",
+                 "version":  "1.0.4",
                  "orientation":  "portrait",
                  "icon":  "./assets/icon.png",
                  "userInterfaceStyle":  "light",
@@ -24,7 +24,7 @@
                                  "edgeToEdgeEnabled":  true,
                                  "predictiveBackGestureEnabled":  false,
                                  "package":  "com.caderninho.financeiro",
-                                 "versionCode":  4,
+                                 "versionCode":  5,
                                  "permissions":  [
                                                      "INTERNET"
                                                  ]

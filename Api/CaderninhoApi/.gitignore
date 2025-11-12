@@ -26,9 +26,6 @@ bld/
 *.db-shm
 *.db-wal
 
-# Entity Framework
-Migrations/
-
 # User-specific files
 *.rsuser
 *.suo

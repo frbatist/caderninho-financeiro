@@ -8,7 +8,7 @@ const UPDATE_URL = 'http://10.0.0.131:8080/updates/latest.json';
 const APK_BASE_URL = 'http://10.0.0.131:8080';
 
 // Versão atual do app (deve corresponder ao app.json)
-const CURRENT_VERSION = '1.0.3';
+const CURRENT_VERSION = '1.0.4';
 
 interface UpdateInfo {
   version: string;

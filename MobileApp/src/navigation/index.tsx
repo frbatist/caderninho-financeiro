@@ -21,6 +21,7 @@ import AddMonthlyEntryScreen from '../screens/AddMonthlyEntryScreen';
 import MonthlySpendingLimitsScreen from '../screens/MonthlySpendingLimitsScreen';
 import AddMonthlySpendingLimitScreen from '../screens/AddMonthlySpendingLimitScreen';
 import MonthlyStatementScreen from '../screens/MonthlyStatementScreen';
+import CardsScreen from '../screens/CardsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -125,6 +126,11 @@ export default function Navigation() {
           name="MonthlyStatement" 
           component={MonthlyStatementScreen}
           options={{ title: 'Extrato Mensal' }}
+        />
+        <Stack.Screen 
+          name="Cards" 
+          component={CardsScreen}
+          options={{ title: 'Cartões' }}
         />
         {/* Adicione mais telas aqui conforme desenvolver */}
       </Stack.Navigator>
