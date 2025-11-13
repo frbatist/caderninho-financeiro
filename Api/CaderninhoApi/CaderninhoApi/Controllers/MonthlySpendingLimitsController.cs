@@ -245,4 +245,41 @@ public class MonthlySpendingLimitsController : ControllerBase
             return StatusCode(500, "Erro interno do servidor");
         }
     }
+
+    /// <summary>
+    /// Duplica um limite de gasto mensal para o próximo mês
+    /// </summary>
+    /// <param name="id">ID do limite de gasto a ser duplicado</param>
+    /// <param name="dto">Dados da duplicação (novo valor)</param>
+    /// <returns>Novo limite de gasto criado</returns>
+    [HttpPost("{id}/duplicate-to-next-month")]
+    public async Task<ActionResult<MonthlySpendingLimit>> DuplicateToNextMonth(int id, [FromBody] DuplicateMonthlySpendingLimitDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var duplicatedLimit = await _monthlySpendingLimitService.DuplicateToNextMonthAsync(id, dto);
+
+            if (duplicatedLimit == null)
+            {
+                return NotFound("Limite de gasto não encontrado");
+            }
+
+            return CreatedAtAction(nameof(GetById), new { id = duplicatedLimit.Id }, duplicatedLimit);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Tentativa de duplicar limite criaria duplicata: {LimitId}", id);
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao duplicar limite de gasto {LimitId}", id);
+            return StatusCode(500, "Erro interno do servidor");
+        }
+    }
 }

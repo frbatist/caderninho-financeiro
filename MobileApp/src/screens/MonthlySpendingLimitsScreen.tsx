@@ -28,6 +28,7 @@ import {
   getEstablishmentTypeName,
   getEstablishmentTypeOptionsWithIcons 
 } from '../types/establishmentType';
+import DuplicateMonthlySpendingLimitModal from '../components/DuplicateMonthlySpendingLimitModal';
 
 type MonthlySpendingLimitsScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'MonthlySpendingLimits'>;
@@ -97,6 +98,10 @@ export default function MonthlySpendingLimitsScreen({ navigation }: MonthlySpend
   const [limits, setLimits] = useState<MonthlySpendingLimit[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Estados do modal de duplicação
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [limitToDuplicate, setLimitToDuplicate] = useState<MonthlySpendingLimit | null>(null);
 
   // Carregar limites
   const loadLimits = useCallback(async (showLoading = true) => {
@@ -185,6 +190,27 @@ export default function MonthlySpendingLimitsScreen({ navigation }: MonthlySpend
         },
       ]
     );
+  };
+
+  // Abrir modal de duplicação
+  const handleDuplicateLimit = (limit: MonthlySpendingLimit) => {
+    setLimitToDuplicate(limit);
+    setShowDuplicateModal(true);
+  };
+
+  // Confirmar duplicação
+  const handleConfirmDuplicate = async (amount: number) => {
+    if (!limitToDuplicate) return;
+
+    try {
+      await CaderninhoApiService.monthlySpendingLimits.duplicateToNextMonth(limitToDuplicate.id, { amount });
+      Alert.alert('Sucesso', 'Limite duplicado para o próximo mês com sucesso!');
+      loadLimits();
+    } catch (error) {
+      console.error('Erro ao duplicar limite:', error);
+      Alert.alert('Erro', 'Não foi possível duplicar o limite');
+      throw error; // Re-throw para o modal tratar
+    }
   };
 
   // Navegar para adicionar limite
@@ -295,6 +321,13 @@ export default function MonthlySpendingLimitsScreen({ navigation }: MonthlySpend
             <Text style={styles.actionButtonText}>
               {item.isActive ? '⏸️ Desativar' : '▶️ Ativar'}
             </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.actionButton, styles.duplicateButton]}
+            onPress={() => handleDuplicateLimit(item)}
+          >
+            <Text style={styles.actionButtonText}>📋 Duplicar</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
@@ -427,6 +460,14 @@ export default function MonthlySpendingLimitsScreen({ navigation }: MonthlySpend
       <TouchableOpacity style={styles.fab} onPress={handleAddLimit}>
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
+
+      {/* Modal de Duplicação */}
+      <DuplicateMonthlySpendingLimitModal
+        visible={showDuplicateModal}
+        limit={limitToDuplicate}
+        onClose={() => setShowDuplicateModal(false)}
+        onConfirm={handleConfirmDuplicate}
+      />
     </View>
   );
 }
@@ -648,6 +689,9 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     backgroundColor: '#4CAF50',
+  },
+  duplicateButton: {
+    backgroundColor: '#2196F3',
   },
   deleteButton: {
     backgroundColor: '#f44336',

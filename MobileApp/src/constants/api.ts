@@ -55,6 +55,7 @@ export const API_ENDPOINTS = {
   UPDATE_MONTHLY_SPENDING_LIMIT: (id: number) => `/monthlyspendinglimits/${id}`,
   DELETE_MONTHLY_SPENDING_LIMIT: (id: number) => `/monthlyspendinglimits/${id}`,
   TOGGLE_MONTHLY_SPENDING_LIMIT_ACTIVE: (id: number) => `/monthlyspendinglimits/${id}/toggle-active`,
+  DUPLICATE_MONTHLY_SPENDING_LIMIT_TO_NEXT_MONTH: (id: number) => `/monthlyspendinglimits/${id}/duplicate-to-next-month`,
   
   // Extrato Mensal (Monthly Statement)
   MONTHLY_STATEMENT: '/monthlystatement',

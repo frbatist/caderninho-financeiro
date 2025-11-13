@@ -37,4 +37,12 @@ public interface IMonthlySpendingLimitService
     /// <param name="isActive">Status desejado</param>
     /// <returns>Limite atualizado ou null se não encontrado</returns>
     Task<MonthlySpendingLimit?> ToggleActiveAsync(int id, bool isActive);
+
+    /// <summary>
+    /// Duplica um limite de gasto mensal para o próximo mês
+    /// </summary>
+    /// <param name="id">ID do limite a ser duplicado</param>
+    /// <param name="dto">Dados da duplicação (novo valor)</param>
+    /// <returns>Novo limite criado ou null se o original não foi encontrado</returns>
+    Task<MonthlySpendingLimit?> DuplicateToNextMonthAsync(int id, DuplicateMonthlySpendingLimitDto dto);
 }

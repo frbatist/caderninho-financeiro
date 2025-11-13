@@ -164,4 +164,66 @@ public class MonthlySpendingLimitService : IMonthlySpendingLimitService
 
         return limit;
     }
+
+    /// <summary>
+    /// Duplica um limite de gasto mensal para o próximo mês
+    /// </summary>
+    /// <param name="id">ID do limite a ser duplicado</param>
+    /// <param name="dto">Dados da duplicação (novo valor)</param>
+    /// <returns>Novo limite criado ou null se o original não foi encontrado</returns>
+    public async Task<MonthlySpendingLimit?> DuplicateToNextMonthAsync(int id, DuplicateMonthlySpendingLimitDto dto)
+    {
+        var originalLimit = await _context.MonthlySpendingLimits.FindAsync(id);
+
+        if (originalLimit == null)
+        {
+            _logger.LogWarning("Tentativa de duplicar limite de gasto não encontrado: {LimitId}", id);
+            return null;
+        }
+
+        // Calcular próximo mês e ano
+        int nextMonth = originalLimit.Month + 1;
+        int nextYear = originalLimit.Year;
+
+        if (nextMonth > 12)
+        {
+            nextMonth = 1;
+            nextYear++;
+        }
+
+        // Verificar se já existe um limite para este tipo de estabelecimento no próximo mês
+        var existingLimit = await _context.MonthlySpendingLimits
+            .FirstOrDefaultAsync(l => 
+                l.EstablishmentType == originalLimit.EstablishmentType && 
+                l.Month == nextMonth && 
+                l.Year == nextYear);
+
+        if (existingLimit != null)
+        {
+            _logger.LogWarning(
+                "Já existe um limite para {EstablishmentType} em {Month}/{Year}",
+                originalLimit.EstablishmentType, nextMonth, nextYear);
+            throw new InvalidOperationException(
+                $"Já existe um limite para {originalLimit.EstablishmentType} em {nextMonth}/{nextYear}");
+        }
+
+        // Criar novo limite com os mesmos dados, mas para o próximo mês
+        var duplicatedLimit = new MonthlySpendingLimit
+        {
+            EstablishmentType = originalLimit.EstablishmentType,
+            LimitAmount = dto.Amount, // Usar o valor do DTO (permite edição)
+            Month = nextMonth,
+            Year = nextYear,
+            IsActive = true
+        };
+
+        _context.MonthlySpendingLimits.Add(duplicatedLimit);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Limite de gasto {OriginalId} duplicado para o próximo mês: {NewLimitId} - {EstablishmentType} - R$ {Amount} - {Month}/{Year}", 
+            id, duplicatedLimit.Id, duplicatedLimit.EstablishmentType, duplicatedLimit.LimitAmount, nextMonth, nextYear);
+
+        return duplicatedLimit;
+    }
 }
