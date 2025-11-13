@@ -128,4 +128,51 @@ public class MonthlyEntryService : IMonthlyEntryService
 
         return entry;
     }
+
+    /// <summary>
+    /// Duplica uma entrada mensal para o próximo mês
+    /// </summary>
+    /// <param name="id">ID da entrada mensal a ser duplicada</param>
+    /// <param name="dto">Dados da duplicação (novo valor)</param>
+    /// <returns>Nova entrada mensal criada ou null se a entrada original não for encontrada</returns>
+    public async Task<MonthlyEntry?> DuplicateToNextMonthAsync(int id, DuplicateMonthlyEntryDto dto)
+    {
+        var originalEntry = await _context.MonthlyEntries.FindAsync(id);
+
+        if (originalEntry == null)
+        {
+            _logger.LogWarning("Tentativa de duplicar entrada mensal não encontrada: {EntryId}", id);
+            return null;
+        }
+
+        // Calcular próximo mês e ano
+        int nextMonth = originalEntry.Month.HasValue ? originalEntry.Month.Value + 1 : DateTime.UtcNow.Month + 1;
+        int nextYear = originalEntry.Year ?? DateTime.UtcNow.Year;
+
+        if (nextMonth > 12)
+        {
+            nextMonth = 1;
+            nextYear++;
+        }
+
+        // Criar nova entrada com os mesmos dados, mas para o próximo mês
+        var duplicatedEntry = new MonthlyEntry
+        {
+            Type = originalEntry.Type,
+            Description = originalEntry.Description,
+            Amount = dto.Amount, // Usar o valor do DTO (permite edição)
+            Operation = originalEntry.Operation,
+            Month = nextMonth,
+            Year = nextYear,
+            IsActive = true
+        };
+
+        _context.MonthlyEntries.Add(duplicatedEntry);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Entrada mensal {OriginalId} duplicada para o próximo mês: {NewEntryId} - Mês: {Month}/{Year}", 
+            id, duplicatedEntry.Id, nextMonth, nextYear);
+
+        return duplicatedEntry;
+    }
 }

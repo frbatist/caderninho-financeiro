@@ -150,6 +150,10 @@ export interface CreateMonthlyEntryDto {
   year: number;
 }
 
+export interface DuplicateMonthlyEntryDto {
+  amount: number;
+}
+
 export interface CreateMonthlySpendingLimitDto {
   establishmentType: EstablishmentType;
   limitAmount: number;
@@ -372,6 +376,10 @@ export class MonthlyEntriesService {
 
   static async toggleActive(id: number, isActive: boolean): Promise<MonthlyEntry> {
     return apiService.patch<MonthlyEntry>(API_ENDPOINTS.TOGGLE_MONTHLY_ENTRY_ACTIVE(id), isActive);
+  }
+
+  static async duplicateToNextMonth(id: number, data: DuplicateMonthlyEntryDto): Promise<MonthlyEntry> {
+    return apiService.post<MonthlyEntry>(API_ENDPOINTS.DUPLICATE_MONTHLY_ENTRY_TO_NEXT_MONTH(id), data);
   }
 }
 

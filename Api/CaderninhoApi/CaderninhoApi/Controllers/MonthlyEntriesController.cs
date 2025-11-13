@@ -235,4 +235,36 @@ public class MonthlyEntriesController : ControllerBase
             return StatusCode(500, "Erro interno do servidor");
         }
     }
+
+    /// <summary>
+    /// Duplica uma entrada mensal para o próximo mês
+    /// </summary>
+    /// <param name="id">ID da entrada mensal a ser duplicada</param>
+    /// <param name="dto">Dados da duplicação (novo valor)</param>
+    /// <returns>Nova entrada mensal criada</returns>
+    [HttpPost("{id}/duplicate-to-next-month")]
+    public async Task<ActionResult<MonthlyEntry>> DuplicateToNextMonth(int id, [FromBody] DuplicateMonthlyEntryDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var duplicatedEntry = await _monthlyEntryService.DuplicateToNextMonthAsync(id, dto);
+
+            if (duplicatedEntry == null)
+            {
+                return NotFound("Entrada mensal não encontrada");
+            }
+
+            return CreatedAtAction(nameof(GetById), new { id = duplicatedEntry.Id }, duplicatedEntry);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao duplicar entrada mensal {EntryId}", id);
+            return StatusCode(500, "Erro interno do servidor");
+        }
+    }
 }

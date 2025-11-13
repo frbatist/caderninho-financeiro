@@ -37,4 +37,12 @@ public interface IMonthlyEntryService
     /// <param name="isActive">Status desejado</param>
     /// <returns>Entrada mensal atualizada ou null se não encontrada</returns>
     Task<MonthlyEntry?> ToggleActiveAsync(int id, bool isActive);
+
+    /// <summary>
+    /// Duplica uma entrada mensal para o próximo mês
+    /// </summary>
+    /// <param name="id">ID da entrada mensal a ser duplicada</param>
+    /// <param name="dto">Dados da duplicação (novo valor)</param>
+    /// <returns>Nova entrada mensal criada ou null se a entrada original não for encontrada</returns>
+    Task<MonthlyEntry?> DuplicateToNextMonthAsync(int id, DuplicateMonthlyEntryDto dto);
 }

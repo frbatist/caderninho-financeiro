@@ -1,4 +1,5 @@
 using CaderninhoApi.Application.Services;
+using CaderninhoApi.Domain.Abstractions;
 using CaderninhoApi.Domain.DTOs;
 using CaderninhoApi.Domain.Entities;
 using CaderninhoApi.Domain.Enums;
@@ -22,6 +23,13 @@ public class ExpenseServiceTests
             .Options;
 
         return new ApplicationDbContext(options);
+    }
+
+    private ExpenseService CreateExpenseService(ApplicationDbContext context)
+    {
+        var logger = Substitute.For<ILogger<ExpenseService>>();
+        var installmentService = Substitute.For<ICreditCardInstallmentDomainService>();
+        return new ExpenseService(context, logger, installmentService);
     }
 
     private async Task<Establishment> CreateTestEstablishment(ApplicationDbContext context)
@@ -55,8 +63,7 @@ public class ExpenseServiceTests
     {
         // Arrange
         var context = CreateInMemoryContext();
-        var logger = Substitute.For<ILogger<ExpenseService>>();
-        var service = new ExpenseService(context, logger);
+        var service = CreateExpenseService(context);
 
         var establishment = await CreateTestEstablishment(context);
         var card = await CreateTestCard(context);
@@ -93,8 +100,7 @@ public class ExpenseServiceTests
     {
         // Arrange
         var context = CreateInMemoryContext();
-        var logger = Substitute.For<ILogger<ExpenseService>>();
-        var service = new ExpenseService(context, logger);
+        var service = CreateExpenseService(context);
 
         var establishment = await CreateTestEstablishment(context);
         var card = await CreateTestCard(context);
@@ -124,8 +130,7 @@ public class ExpenseServiceTests
     {
         // Arrange
         var context = CreateInMemoryContext();
-        var logger = Substitute.For<ILogger<ExpenseService>>();
-        var service = new ExpenseService(context, logger);
+        var service = CreateExpenseService(context);
 
         var dto = new CreateExpenseDto
         {
@@ -150,8 +155,7 @@ public class ExpenseServiceTests
     {
         // Arrange
         var context = CreateInMemoryContext();
-        var logger = Substitute.For<ILogger<ExpenseService>>();
-        var service = new ExpenseService(context, logger);
+        var service = CreateExpenseService(context);
 
         var establishment = await CreateTestEstablishment(context);
 
@@ -178,8 +182,7 @@ public class ExpenseServiceTests
     {
         // Arrange
         var context = CreateInMemoryContext();
-        var logger = Substitute.For<ILogger<ExpenseService>>();
-        var service = new ExpenseService(context, logger);
+        var service = CreateExpenseService(context);
 
         var establishment = await CreateTestEstablishment(context);
 
@@ -206,8 +209,7 @@ public class ExpenseServiceTests
     {
         // Arrange
         var context = CreateInMemoryContext();
-        var logger = Substitute.For<ILogger<ExpenseService>>();
-        var service = new ExpenseService(context, logger);
+        var service = CreateExpenseService(context);
 
         var establishment = await CreateTestEstablishment(context);
 
@@ -234,8 +236,7 @@ public class ExpenseServiceTests
     {
         // Arrange
         var context = CreateInMemoryContext();
-        var logger = Substitute.For<ILogger<ExpenseService>>();
-        var service = new ExpenseService(context, logger);
+        var service = CreateExpenseService(context);
 
         var establishment = await CreateTestEstablishment(context);
 
@@ -263,8 +264,7 @@ public class ExpenseServiceTests
     {
         // Arrange
         var context = CreateInMemoryContext();
-        var logger = Substitute.For<ILogger<ExpenseService>>();
-        var service = new ExpenseService(context, logger);
+        var service = CreateExpenseService(context);
 
         var establishment = await CreateTestEstablishment(context);
 
@@ -292,8 +292,7 @@ public class ExpenseServiceTests
     {
         // Arrange
         var context = CreateInMemoryContext();
-        var logger = Substitute.For<ILogger<ExpenseService>>();
-        var service = new ExpenseService(context, logger);
+        var service = CreateExpenseService(context);
 
         var establishment = await CreateTestEstablishment(context);
         var card = await CreateTestCard(context);
@@ -322,8 +321,7 @@ public class ExpenseServiceTests
     {
         // Arrange
         var context = CreateInMemoryContext();
-        var logger = Substitute.For<ILogger<ExpenseService>>();
-        var service = new ExpenseService(context, logger);
+        var service = CreateExpenseService(context);
 
         var establishment = await CreateTestEstablishment(context);
         var card = await CreateTestCard(context);
@@ -351,8 +349,7 @@ public class ExpenseServiceTests
     {
         // Arrange
         var context = CreateInMemoryContext();
-        var logger = Substitute.For<ILogger<ExpenseService>>();
-        var service = new ExpenseService(context, logger);
+        var service = CreateExpenseService(context);
 
         var establishment = await CreateTestEstablishment(context);
         var card = await CreateTestCard(context);

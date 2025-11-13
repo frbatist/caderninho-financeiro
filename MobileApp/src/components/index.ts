@@ -8,6 +8,7 @@ export { default as CardDropdown } from './CardDropdown';
 export { default as EstablishmentDropdown } from './EstablishmentDropdown';
 export { default as AddCardModal } from './AddCardModal';
 export { default as AddEstablishmentModal } from './AddEstablishmentModal';
+export { default as DuplicateMonthlyEntryModal } from './DuplicateMonthlyEntryModal';
 export { default as DropdownExample } from './DropdownExample';
 
 // Exportar tipos também

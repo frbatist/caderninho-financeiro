@@ -23,6 +23,7 @@ import CaderninhoApiService, {
   MonthlyEntryType,
   OperationType 
 } from '../services/caderninhoApiService';
+import DuplicateMonthlyEntryModal from '../components/DuplicateMonthlyEntryModal';
 
 type MonthlyEntriesScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'MonthlyEntries'>;
@@ -86,6 +87,10 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [totalEntries, setTotalEntries] = useState(0);
+
+  // Estados do modal de duplicação
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [entryToDuplicate, setEntryToDuplicate] = useState<MonthlyEntry | null>(null);
 
   // Carregar entradas
   const loadEntries = useCallback(async (showLoading = true) => {
@@ -176,6 +181,27 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
     );
   };
 
+  // Abrir modal de duplicação
+  const handleDuplicateEntry = (entry: MonthlyEntry) => {
+    setEntryToDuplicate(entry);
+    setShowDuplicateModal(true);
+  };
+
+  // Confirmar duplicação
+  const handleConfirmDuplicate = async (amount: number) => {
+    if (!entryToDuplicate) return;
+
+    try {
+      await CaderninhoApiService.monthlyEntries.duplicateToNextMonth(entryToDuplicate.id, { amount });
+      Alert.alert('Sucesso', 'Entrada duplicada para o próximo mês com sucesso!');
+      loadEntries();
+    } catch (error) {
+      console.error('Erro ao duplicar entrada:', error);
+      Alert.alert('Erro', 'Não foi possível duplicar a entrada');
+      throw error; // Re-throw para o modal tratar
+    }
+  };
+
   // Navegar para adicionar entrada
   const handleAddEntry = () => {
     navigation.navigate('AddMonthlyEntry');
@@ -248,6 +274,13 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
         </Text>
         
         <View style={styles.entryActions}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.duplicateButton]}
+            onPress={() => handleDuplicateEntry(item)}
+          >
+            <Text style={styles.actionButtonText}>📋 Duplicar</Text>
+          </TouchableOpacity>
+          
           <TouchableOpacity
             style={[styles.actionButton, styles.toggleButton]}
             onPress={() => handleToggleActive(item)}
@@ -361,6 +394,17 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
           <Text style={styles.fabText}>+</Text>
         </TouchableOpacity>
       )}
+
+      {/* Modal de duplicação */}
+      <DuplicateMonthlyEntryModal
+        visible={showDuplicateModal}
+        entry={entryToDuplicate}
+        onClose={() => {
+          setShowDuplicateModal(false);
+          setEntryToDuplicate(null);
+        }}
+        onConfirm={handleConfirmDuplicate}
+      />
     </View>
   );
 }
@@ -537,6 +581,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  duplicateButton: {
+    backgroundColor: '#4A90E2',
   },
   toggleButton: {
     backgroundColor: '#2196F3',

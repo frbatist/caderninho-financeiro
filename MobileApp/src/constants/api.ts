@@ -46,6 +46,7 @@ export const API_ENDPOINTS = {
   UPDATE_MONTHLY_ENTRY: (id: number) => `/monthlyentries/${id}`,
   DELETE_MONTHLY_ENTRY: (id: number) => `/monthlyentries/${id}`,
   TOGGLE_MONTHLY_ENTRY_ACTIVE: (id: number) => `/monthlyentries/${id}/toggle-active`,
+  DUPLICATE_MONTHLY_ENTRY_TO_NEXT_MONTH: (id: number) => `/monthlyentries/${id}/duplicate-to-next-month`,
   
   // Limites de Gasto Mensal (Monthly Spending Limits)
   MONTHLY_SPENDING_LIMITS: '/monthlyspendinglimits',
