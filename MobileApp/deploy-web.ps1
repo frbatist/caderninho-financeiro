@@ -90,12 +90,16 @@ function Invoke-SSH {
         if ($plink) {
             # Aceitar chave do host automaticamente e executar comando
             $output = echo y | plink -batch -pw $RaspberryPiPassword "${RaspberryPiUser}@${RaspberryPiHost}" $Command 2>&1
-            return $output
+            if ($LASTEXITCODE -eq 0 -or [string]::IsNullOrEmpty($output) -eq $false) {
+                return $output
+            }
+            # Se falhou, pode ser problema de autenticação, tentar SSH normal
         }
     }
     
     # Fallback para SSH normal
-    ssh -o StrictHostKeyChecking=no "${RaspberryPiUser}@${RaspberryPiHost}" $Command
+    $result = ssh -o StrictHostKeyChecking=no "${RaspberryPiUser}@${RaspberryPiHost}" $Command 2>&1
+    return $result
 }
 
 # Função auxiliar para SCP com senha
@@ -312,31 +316,36 @@ function Deploy-ToRaspberryPi {
     
     # Build
     Write-Host "Fazendo build da imagem Docker..." -ForegroundColor Yellow
-    $buildOutput = Invoke-SSH "cd $deployPath && docker compose -f docker-compose.web.yml build --no-cache"
-    Write-Host $buildOutput
+    Write-Host "Isso pode levar varios minutos..." -ForegroundColor Gray
+    $buildOutput = Invoke-SSH "cd $deployPath && docker compose -f docker-compose.web.yml build --no-cache 2>&1; echo EXIT_CODE:`$?"
+    
+    # Verificar se o build teve sucesso
+    if ($buildOutput -match "EXIT_CODE:0") {
+        Write-Host "Build concluido com sucesso!" -ForegroundColor Green
+    } else {
+        Write-Host $buildOutput
+        if ($buildOutput -notmatch "Successfully built|Built" -and $buildOutput -match "error|Error|ERROR|failed|Failed") {
+            Write-Host "Erro no build da imagem Docker" -ForegroundColor Red
+            exit 1
+        }
+    }
     
     # Iniciar container
     Write-Host ""
     Write-Host "Iniciando container..." -ForegroundColor Yellow
-    $upOutput = Invoke-SSH "cd $deployPath && docker compose -f docker-compose.web.yml up -d"
-    Write-Host $upOutput
+    $upOutput = Invoke-SSH "cd $deployPath && docker compose -f docker-compose.web.yml up -d 2>&1; echo EXIT_CODE:`$?"
     
-    # Verificar se o container foi criado
-    Start-Sleep -Seconds 5
-    $containerCheck = Invoke-SSH "docker ps | grep caderninho-web"
-    
-    if ([string]::IsNullOrEmpty($containerCheck)) {
-        Write-Host ""
-        Write-Host "Aviso: Container pode nao estar rodando" -ForegroundColor Yellow
-        Write-Host "Verificando todos os containers..." -ForegroundColor Gray
-        Invoke-SSH "docker ps -a | grep caderninho-web"
-        Write-Host ""
-        Write-Host "Para ver logs:" -ForegroundColor Cyan
-        Write-Host "  ssh ${RaspberryPiUser}@${RaspberryPiHost} 'docker logs caderninho-web'" -ForegroundColor White
-    } else {
-        Write-Host ""
+    # Verificar se iniciou com sucesso
+    if ($upOutput -match "EXIT_CODE:0") {
         Write-Host "Container iniciado com sucesso!" -ForegroundColor Green
+    } else {
+        Write-Host $upOutput
+        if ($upOutput -match "error|Error|ERROR") {
+            Write-Host "Erro ao iniciar container" -ForegroundColor Red
+            exit 1
+        }
     }
+    
     Write-Host ""
     
     # Aguardar container ficar saudável
@@ -393,8 +402,22 @@ try {
 } catch {
     Write-Host ""
     Write-Host "Erro durante o processo:" -ForegroundColor Red
-    Write-Host $_.Exception.Message -ForegroundColor Red
-    Write-Host $_.ScriptStackTrace -ForegroundColor Gray
+    
+    # Mostrar apenas mensagens de erro relevantes
+    $errorMsg = $_.Exception.Message
+    if ($errorMsg -notmatch "Built|EXIT_CODE") {
+        Write-Host $errorMsg -ForegroundColor Red
+    }
+    
+    # Mostrar stack trace apenas se for erro real
+    if ($PSBoundParameters['Verbose'] -or $PSBoundParameters['Debug']) {
+        Write-Host ""
+        Write-Host "Stack Trace:" -ForegroundColor Gray
+        Write-Host $_.ScriptStackTrace -ForegroundColor Gray
+    }
+    
+    Write-Host ""
+    Write-Host "Use -Verbose para mais detalhes" -ForegroundColor Gray
     Write-Host ""
     exit 1
 }

@@ -11,13 +11,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
 import { EstablishmentDropdown, CardDropdown } from '../components';
+import { showAlert } from '../utils/alerts';
 import CaderninhoApiService, { 
   CreateExpenseDto, 
   PaymentType, 
@@ -121,7 +121,7 @@ export default function AddExpenseScreen({ navigation, route }: AddExpenseScreen
       // Buscar usuário do storage
       const user = await UserStorageService.getUser();
       if (!user) {
-        Alert.alert('Erro', 'Usuário não encontrado. Por favor, faça login novamente.');
+        showAlert('Erro', 'Usuário não encontrado. Por favor, faça login novamente.');
         navigation.reset({
           index: 0,
           routes: [{ name: 'UserSelection' }],
@@ -150,11 +150,11 @@ export default function AddExpenseScreen({ navigation, route }: AddExpenseScreen
       // Mostrar toast de sucesso (não bloqueia a navegação)
       // O Alert aparecerá na tela anterior
       setTimeout(() => {
-        Alert.alert('Sucesso', 'Despesa adicionada com sucesso!');
+        showAlert('Sucesso', 'Despesa adicionada com sucesso!');
       }, 300);
     } catch (error) {
       console.error('Erro ao criar despesa:', error);
-      Alert.alert('Erro', 'Não foi possível adicionar a despesa. Tente novamente.');
+      showAlert('Erro', 'Não foi possível adicionar a despesa. Tente novamente.');
     } finally {
       setLoading(false);
     }

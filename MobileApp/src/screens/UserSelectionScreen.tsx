@@ -5,13 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import CaderninhoApiService, { User } from '../services/caderninhoApiService';
 import UserStorageService from '../services/userStorageService';
+import { showAlert } from '../utils/alerts';
 
 type UserSelectionScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'UserSelection'>;
@@ -47,7 +47,7 @@ export default function UserSelectionScreen({ navigation }: UserSelectionScreenP
       setUsers(userList);
       
       if (userList.length === 0) {
-        Alert.alert(
+        showAlert(
           'Nenhum Usuário',
           'Não há usuários cadastrados no sistema. Por favor, cadastre um usuário no backend primeiro.',
           [{ text: 'OK' }]
@@ -60,7 +60,7 @@ export default function UserSelectionScreen({ navigation }: UserSelectionScreenP
       console.error('[UserSelection] Erro response:', error.response);
       console.error('[UserSelection] Erro request:', error.request);
       
-      Alert.alert(
+      showAlert(
         'Erro',
         `Não foi possível carregar os usuários. 
         
@@ -93,7 +93,7 @@ Verifique:
       });
     } catch (error) {
       console.error('Erro ao salvar usuário:', error);
-      Alert.alert('Erro', 'Não foi possível salvar o usuário selecionado.');
+      showAlert('Erro', 'Não foi possível salvar o usuário selecionado.');
       setSelectedUserId(null);
     }
   };

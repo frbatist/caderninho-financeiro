@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,6 +21,7 @@ import CaderninhoApiService, {
   MonthlyEntryType,
   OperationType 
 } from '../services/caderninhoApiService';
+import { showAlert } from '../utils/alerts';
 
 type AddMonthlyEntryScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddMonthlyEntry'>;
 type AddMonthlyEntryScreenRouteProp = RouteProp<RootStackParamList, 'AddMonthlyEntry'>;
@@ -132,11 +132,11 @@ export default function AddMonthlyEntryScreen({ navigation }: AddMonthlyEntryScr
       
       // Mostrar toast de sucesso
       setTimeout(() => {
-        Alert.alert('Sucesso', 'Entrada mensal adicionada com sucesso!');
+        showAlert('Sucesso', 'Entrada mensal adicionada com sucesso!');
       }, 300);
     } catch (error) {
       console.error('Erro ao criar entrada mensal:', error);
-      Alert.alert('Erro', 'Não foi possível adicionar a entrada mensal. Tente novamente.');
+      showAlert('Erro', 'Não foi possível adicionar a entrada mensal. Tente novamente.');
     } finally {
       setLoading(false);
     }

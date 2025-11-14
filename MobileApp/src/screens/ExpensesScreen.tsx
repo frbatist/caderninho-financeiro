@@ -10,7 +10,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
@@ -18,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
 import CaderninhoApiService, { Expense, ExpenseFilterRequest } from '../services/caderninhoApiService';
+import { showAlert } from '../utils/alerts';
 
 type ExpensesScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Expenses'>;
@@ -79,7 +79,7 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
       setTotalExpenses(response.totalItems);
     } catch (error) {
       console.error('Erro ao carregar despesas:', error);
-      Alert.alert('Erro', 'Não foi possível carregar as despesas');
+      showAlert('Erro', 'Não foi possível carregar as despesas');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -101,7 +101,7 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
 
   // Deletar despesa
   const handleDeleteExpense = (expense: Expense) => {
-    Alert.alert(
+    showAlert(
       'Confirmar Exclusão',
       `Deseja realmente excluir a despesa "${expense.description}"?`,
       [
@@ -113,12 +113,12 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
             try {
               await CaderninhoApiService.expenses.delete(expense.id);
               
-              Alert.alert('Sucesso', 'Despesa excluída com sucesso');
+              showAlert('Sucesso', 'Despesa excluída com sucesso');
               loadExpenses(); // Recarregar a lista após exclusão
               
             } catch (error) {
               console.error('Erro ao deletar despesa:', error);
-              Alert.alert('Erro', 'Não foi possível excluir a despesa');
+              showAlert('Erro', 'Não foi possível excluir a despesa');
             }
           },
         },

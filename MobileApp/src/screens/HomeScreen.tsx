@@ -4,13 +4,14 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
 import UserStorageService from '../services/userStorageService';
 import CaderninhoApiService, { User, MonthlyEntry, OperationType, PaymentType } from '../services/caderninhoApiService';
 import UpdateService from '../services/updateService';
+import { showAlert } from '../utils/alerts';
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -106,7 +107,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       setExpenses(totalExpenses);
     } catch (error) {
       console.error('Erro ao carregar dados financeiros:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os dados financeiros');
+      showAlert('Erro', 'Não foi possível carregar os dados financeiros');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -130,7 +131,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
    * Troca de usuário
    */
   const changeUser = () => {
-    Alert.alert(
+    showAlert(
       'Trocar Usuário',
       'Deseja realmente trocar de usuário?',
       [

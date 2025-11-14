@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Modal,
   FlatList,
@@ -22,6 +21,7 @@ import { RootStackParamList } from '../navigation/types';
 import CaderninhoApiService, { 
   CreateMonthlySpendingLimitDto
 } from '../services/caderninhoApiService';
+import { showAlert } from '../utils/alerts';
 import { 
   EstablishmentType, 
   getEstablishmentTypeOptionsWithIcons,
@@ -121,16 +121,16 @@ export default function AddMonthlySpendingLimitScreen({ navigation }: AddMonthly
       
       // Mostrar toast de sucesso
       setTimeout(() => {
-        Alert.alert('Sucesso', 'Limite de gasto adicionado com sucesso!');
+        showAlert('Sucesso', 'Limite de gasto adicionado com sucesso!');
       }, 300);
     } catch (error: any) {
       console.error('Erro ao criar limite de gasto:', error);
       
       // Verificar se é erro de duplicação
       if (error?.response?.status === 400 && error?.response?.data?.includes('já existe')) {
-        Alert.alert('Erro', 'Já existe um limite para este tipo de estabelecimento neste mês e ano.');
+        showAlert('Erro', 'Já existe um limite para este tipo de estabelecimento neste mês e ano.');
       } else {
-        Alert.alert('Erro', 'Não foi possível adicionar o limite de gasto. Tente novamente.');
+        showAlert('Erro', 'Não foi possível adicionar o limite de gasto. Tente novamente.');
       }
     } finally {
       setLoading(false);

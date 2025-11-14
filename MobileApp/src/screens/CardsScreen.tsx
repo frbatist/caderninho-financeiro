@@ -10,7 +10,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
@@ -19,6 +18,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
 import CaderninhoApiService, { Card, CardType, CardBrand } from '../services/caderninhoApiService';
 import AddCardModal from '../components/AddCardModal';
+import { showAlert } from '../utils/alerts';
 
 type CardsScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Cards'>;
@@ -50,7 +50,7 @@ export default function CardsScreen({ navigation }: CardsScreenProps) {
       setCards(response.items);
     } catch (error) {
       console.error('Erro ao carregar cartões:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os cartões');
+      showAlert('Erro', 'Não foi possível carregar os cartões');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -76,7 +76,7 @@ export default function CardsScreen({ navigation }: CardsScreenProps) {
    * Excluir cartão
    */
   const handleDeleteCard = (card: Card) => {
-    Alert.alert(
+    showAlert(
       'Excluir Cartão',
       `Deseja realmente excluir o cartão "${card.name}"?`,
       [
@@ -89,11 +89,11 @@ export default function CardsScreen({ navigation }: CardsScreenProps) {
               // Como não há método delete na API, apenas removemos da lista
               // Se houver um método delete na API, descomente a linha abaixo
               // await CaderninhoApiService.cards.delete(card.id);
-              Alert.alert('Aviso', 'Funcionalidade de exclusão não disponível na API');
+              showAlert('Aviso', 'Funcionalidade de exclusão não disponível na API');
               // setCards((prev) => prev.filter((c) => c.id !== card.id));
             } catch (error) {
               console.error('Erro ao excluir cartão:', error);
-              Alert.alert('Erro', 'Não foi possível excluir o cartão');
+              showAlert('Erro', 'Não foi possível excluir o cartão');
             }
           },
         },

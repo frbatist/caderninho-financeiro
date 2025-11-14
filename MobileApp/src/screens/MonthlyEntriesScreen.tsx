@@ -10,9 +10,9 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -24,6 +24,7 @@ import CaderninhoApiService, {
   OperationType 
 } from '../services/caderninhoApiService';
 import DuplicateMonthlyEntryModal from '../components/DuplicateMonthlyEntryModal';
+import { showAlert } from '../utils/alerts';
 
 type MonthlyEntriesScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'MonthlyEntries'>;
@@ -82,6 +83,11 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedStatus, setSelectedStatus] = useState<boolean | undefined>(undefined);
   
+  // Estados de modal de filtros
+  const [yearModalVisible, setYearModalVisible] = useState(false);
+  const [monthModalVisible, setMonthModalVisible] = useState(false);
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+  
   // Estados de dados
   const [entries, setEntries] = useState<MonthlyEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -109,7 +115,7 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
       setTotalEntries(response.totalItems);
     } catch (error) {
       console.error('Erro ao carregar entradas mensais:', error);
-      Alert.alert('Erro', 'Não foi possível carregar as entradas mensais');
+      showAlert('Erro', 'Não foi possível carregar as entradas mensais');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -134,7 +140,7 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
     const newStatus = !entry.isActive;
     const statusText = newStatus ? 'ativar' : 'desativar';
     
-    Alert.alert(
+    showAlert(
       'Confirmar Alteração',
       `Deseja realmente ${statusText} a entrada "${entry.description}"?`,
       [
@@ -144,11 +150,11 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
           onPress: async () => {
             try {
               await CaderninhoApiService.monthlyEntries.toggleActive(entry.id, newStatus);
-              Alert.alert('Sucesso', `Entrada ${newStatus ? 'ativada' : 'desativada'} com sucesso`);
+              showAlert('Sucesso', `Entrada ${newStatus ? 'ativada' : 'desativada'} com sucesso`);
               loadEntries();
             } catch (error) {
               console.error('Erro ao alterar status:', error);
-              Alert.alert('Erro', 'Não foi possível alterar o status da entrada');
+              showAlert('Erro', 'Não foi possível alterar o status da entrada');
             }
           },
         },
@@ -158,7 +164,7 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
 
   // Deletar entrada
   const handleDeleteEntry = (entry: MonthlyEntry) => {
-    Alert.alert(
+    showAlert(
       'Confirmar Exclusão',
       `Deseja realmente excluir a entrada "${entry.description}"?`,
       [
@@ -169,11 +175,11 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
           onPress: async () => {
             try {
               await CaderninhoApiService.monthlyEntries.delete(entry.id);
-              Alert.alert('Sucesso', 'Entrada excluída com sucesso');
+              showAlert('Sucesso', 'Entrada excluída com sucesso');
               loadEntries();
             } catch (error) {
               console.error('Erro ao deletar entrada:', error);
-              Alert.alert('Erro', 'Não foi possível excluir a entrada');
+              showAlert('Erro', 'Não foi possível excluir a entrada');
             }
           },
         },
@@ -193,11 +199,11 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
 
     try {
       await CaderninhoApiService.monthlyEntries.duplicateToNextMonth(entryToDuplicate.id, { amount });
-      Alert.alert('Sucesso', 'Entrada duplicada para o próximo mês com sucesso!');
+      showAlert('Sucesso', 'Entrada duplicada para o próximo mês com sucesso!');
       loadEntries();
     } catch (error) {
       console.error('Erro ao duplicar entrada:', error);
-      Alert.alert('Erro', 'Não foi possível duplicar a entrada');
+      showAlert('Erro', 'Não foi possível duplicar a entrada');
       throw error; // Re-throw para o modal tratar
     }
   };
@@ -215,35 +221,69 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
     }).format(value);
   };
 
-  // Renderizar dropdown customizado
-  const renderDropdown = (
-    value: number | boolean | undefined,
-    options: { value: any; label: string }[],
-    onSelect: (value: any) => void,
-    label: string
-  ) => (
-    <View style={styles.dropdownContainer}>
-      <Text style={styles.dropdownLabel}>{label}</Text>
-      <View style={styles.dropdownOptions}>
-        {options.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.dropdownOption,
-              value === option.value && styles.dropdownOptionSelected
-            ]}
-            onPress={() => onSelect(option.value)}
-          >
-            <Text style={[
-              styles.dropdownOptionText,
-              value === option.value && styles.dropdownOptionTextSelected
-            ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+  // Renderizar selector de filtro (abre modal)
+  const renderFilterSelector = (label: string, value: string, onPress: () => void) => (
+    <TouchableOpacity style={styles.filterSelector} onPress={onPress}>
+      <Text style={styles.filterLabel}>{label}</Text>
+      <View style={styles.filterValueContainer}>
+        <Text style={styles.filterValue} numberOfLines={1}>{value}</Text>
+        <Text style={styles.filterArrow}>▼</Text>
       </View>
-    </View>
+    </TouchableOpacity>
+  );
+
+  // Renderizar modal de seleção
+  const renderSelectionModal = (
+    visible: boolean,
+    onClose: () => void,
+    title: string,
+    options: { value: any; label: string }[],
+    selectedValue: any,
+    onSelect: (value: any) => void
+  ) => (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <Text style={styles.modalCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={options}
+            keyExtractor={(item, index) => `${item.value}-${index}`}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.modalOption,
+                  item.value === selectedValue && styles.modalOptionSelected
+                ]}
+                onPress={() => {
+                  onSelect(item.value);
+                  onClose();
+                }}
+              >
+                <Text style={[
+                  styles.modalOptionText,
+                  item.value === selectedValue && styles.modalOptionTextSelected
+                ]}>
+                  {item.label}
+                </Text>
+                {item.value === selectedValue && (
+                  <Text style={styles.modalOptionCheck}>✓</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      </View>
+    </Modal>
   );
 
   // Renderizar item de entrada
@@ -325,19 +365,22 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
     .reduce((sum, e) => sum + e.amount, 0);
   const balance = totalIncome - totalExpenses;
 
+  // Obter labels para exibição nos filtros
+  const getYearLabel = () => selectedYear.toString();
+  const getMonthLabel = () => monthOptions.find(m => m.value === selectedMonth)?.label || '';
+  const getStatusLabel = () => statusOptions.find(s => s.value === selectedStatus)?.label || '';
+
   return (
     <View style={styles.container}>
       {/* Header com filtros */}
       <View style={styles.header}>
         <Text style={styles.title}>Entradas Mensais</Text>
         
+        {/* Grid de Filtros (3 em uma linha) */}
         <View style={styles.filtersRow}>
-          {renderDropdown(selectedYear, generateYearOptions(), setSelectedYear, 'Ano')}
-          {renderDropdown(selectedMonth, monthOptions, setSelectedMonth, 'Mês')}
-        </View>
-        
-        <View style={styles.statusFilterRow}>
-          {renderDropdown(selectedStatus, statusOptions, setSelectedStatus, 'Status')}
+          {renderFilterSelector('Ano', getYearLabel(), () => setYearModalVisible(true))}
+          {renderFilterSelector('Mês', getMonthLabel(), () => setMonthModalVisible(true))}
+          {renderFilterSelector('Status', getStatusLabel(), () => setStatusModalVisible(true))}
         </View>
 
         {/* Resumo */}
@@ -405,6 +448,34 @@ export default function MonthlyEntriesScreen({ navigation }: MonthlyEntriesScree
         }}
         onConfirm={handleConfirmDuplicate}
       />
+
+      {/* Modais de Filtro */}
+      {renderSelectionModal(
+        yearModalVisible,
+        () => setYearModalVisible(false),
+        'Selecionar Ano',
+        generateYearOptions(),
+        selectedYear,
+        setSelectedYear
+      )}
+      
+      {renderSelectionModal(
+        monthModalVisible,
+        () => setMonthModalVisible(false),
+        'Selecionar Mês',
+        monthOptions,
+        selectedMonth,
+        setSelectedMonth
+      )}
+      
+      {renderSelectionModal(
+        statusModalVisible,
+        () => setStatusModalVisible(false),
+        'Selecionar Status',
+        statusOptions,
+        selectedStatus,
+        setSelectedStatus
+      )}
     </View>
   );
 }
@@ -428,46 +499,38 @@ const styles = StyleSheet.create({
   },
   filtersRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  statusFilterRow: {
+    gap: 8,
     marginBottom: 16,
   },
-  dropdownContainer: {
+  filterSelector: {
     flex: 1,
-  },
-  dropdownLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 6,
-    fontWeight: '600',
-  },
-  dropdownOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  dropdownOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 6,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    padding: 10,
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
-  dropdownOptionSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  dropdownOptionText: {
-    fontSize: 12,
-    color: '#333',
-    fontWeight: '500',
-  },
-  dropdownOptionTextSelected: {
-    color: '#FFF',
+  filterLabel: {
+    fontSize: 11,
+    color: '#666',
+    marginBottom: 4,
     fontWeight: '600',
+  },
+  filterValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  filterValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '600',
+    flex: 1,
+  },
+  filterArrow: {
+    fontSize: 10,
+    color: '#007AFF',
+    marginLeft: 4,
   },
   summaryContainer: {
     marginTop: 8,
@@ -658,5 +721,62 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 32,
     fontWeight: '300',
+  },
+  // Estilos do Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalCloseButton: {
+    padding: 8,
+  },
+  modalCloseText: {
+    fontSize: 24,
+    color: '#666',
+    fontWeight: '300',
+  },
+  modalOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalOptionSelected: {
+    backgroundColor: '#F0F8FF',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  modalOptionTextSelected: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  modalOptionCheck: {
+    fontSize: 20,
+    color: '#007AFF',
+    fontWeight: 'bold',
   },
 });
