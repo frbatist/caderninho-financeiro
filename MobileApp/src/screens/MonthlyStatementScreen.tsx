@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
 } from 'react-native';
 import CaderninhoApiService, {
@@ -14,6 +13,7 @@ import CaderninhoApiService, {
   MonthlyEntry,
   ExpenseByTypeDto,
 } from '../services/caderninhoApiService';
+import { showAlert } from '../utils/alerts';
 
 /**
  * Tela de Extrato Mensal
@@ -26,7 +26,6 @@ export default function MonthlyStatementScreen() {
   // Estados
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [activeTab, setActiveTab] = useState<'entries' | 'statement'>('statement');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -34,8 +33,10 @@ export default function MonthlyStatementScreen() {
   const [monthlyEntries, setMonthlyEntries] = useState<MonthlyEntry[]>([]);
   const [monthlyStatement, setMonthlyStatement] = useState<MonthlyStatementDto | null>(null);
   
-  // Estado de expansão para os grupos de despesas
+  // Estado de expansão para os grupos
   const [expandedTypes, setExpandedTypes] = useState<Set<number>>(new Set());
+  const [expandedIncome, setExpandedIncome] = useState(false);
+  const [expandedExpense, setExpandedExpense] = useState(false);
 
   // Opções de anos (2 anos anteriores, atual, 2 anos posteriores)
   const yearOptions = [
@@ -69,7 +70,7 @@ export default function MonthlyStatementScreen() {
       ]);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os dados. Tente novamente.');
+      showAlert('Erro', 'Não foi possível carregar os dados. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -154,6 +155,209 @@ export default function MonthlyStatementScreen() {
       newExpanded.add(establishmentType);
     }
     setExpandedTypes(newExpanded);
+  };
+
+  /**
+   * Renderiza o conteúdo unificado
+   */
+  const renderUnifiedContent = () => {
+    // Calcular totais das entradas mensais
+    const incomeEntries = monthlyEntries.filter(e => e.operation === 1);
+    const expenseEntries = monthlyEntries.filter(e => e.operation === 2);
+    
+    const totalMonthlyIncome = incomeEntries.reduce((sum, e) => sum + e.amount, 0);
+    const totalMonthlyExpense = expenseEntries.reduce((sum, e) => sum + e.amount, 0);
+
+    // Total de despesas do mês (do statement)
+    const totalExpenses = monthlyStatement?.totalExpenses || 0;
+
+    // Saldo final
+    const finalBalance = totalMonthlyIncome - totalMonthlyExpense - totalExpenses;
+
+    return (
+      <View style={styles.tabContent}>
+        {/* Resumo Geral */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryCardTitle}>💰 Resumo do Mês</Text>
+          
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Receitas (Mensais):</Text>
+            <Text style={[styles.summaryValue, styles.incomeText]}>
+              {formatCurrency(totalMonthlyIncome)}
+            </Text>
+          </View>
+          
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Despesas Fixas (Mensais):</Text>
+            <Text style={[styles.summaryValue, styles.expenseText]}>
+              {formatCurrency(totalMonthlyExpense)}
+            </Text>
+          </View>
+          
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Despesas do Mês:</Text>
+            <Text style={[styles.summaryValue, styles.expenseText]}>
+              {formatCurrency(totalExpenses)}
+            </Text>
+          </View>
+          
+          <View style={styles.summaryDivider} />
+          
+          <View style={[styles.summaryRow, styles.summaryRowTotal]}>
+            <Text style={styles.summaryLabelTotal}>Saldo Final:</Text>
+            <Text style={[styles.summaryValueTotal, finalBalance >= 0 ? styles.incomeText : styles.expenseText]}>
+              {formatCurrency(finalBalance)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Entradas Mensais - Receitas (Colapsável) */}
+        {incomeEntries.length > 0 && (
+          <View style={styles.collapsibleSection}>
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => setExpandedIncome(!expandedIncome)}
+            >
+              <Text style={styles.collapsibleTitle}>
+                {expandedIncome ? '▼' : '▶'} 💵 Receitas Mensais ({incomeEntries.length})
+              </Text>
+              <Text style={[styles.collapsibleAmount, styles.incomeText]}>
+                {formatCurrency(totalMonthlyIncome)}
+              </Text>
+            </TouchableOpacity>
+            
+            {expandedIncome && (
+              <View style={styles.collapsibleContent}>
+                {incomeEntries.map((entry) => (
+                  <View key={entry.id} style={styles.entryCard}>
+                    <View style={styles.entryHeader}>
+                      <Text style={styles.entryDescription}>{entry.description}</Text>
+                      <Text style={[styles.entryAmount, styles.incomeText]}>
+                        {formatCurrency(entry.amount)}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Entradas Mensais - Despesas Fixas (Colapsável) */}
+        {expenseEntries.length > 0 && (
+          <View style={styles.collapsibleSection}>
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => setExpandedExpense(!expandedExpense)}
+            >
+              <Text style={styles.collapsibleTitle}>
+                {expandedExpense ? '▼' : '▶'} 📌 Despesas Fixas ({expenseEntries.length})
+              </Text>
+              <Text style={[styles.collapsibleAmount, styles.expenseText]}>
+                {formatCurrency(totalMonthlyExpense)}
+              </Text>
+            </TouchableOpacity>
+            
+            {expandedExpense && (
+              <View style={styles.collapsibleContent}>
+                {expenseEntries.map((entry) => (
+                  <View key={entry.id} style={styles.entryCard}>
+                    <View style={styles.entryHeader}>
+                      <Text style={styles.entryDescription}>{entry.description}</Text>
+                      <Text style={[styles.entryAmount, styles.expenseText]}>
+                        {formatCurrency(entry.amount)}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Despesas do Mês por Tipo */}
+        {monthlyStatement && monthlyStatement.expensesByType.length > 0 && (
+          <View style={styles.expensesList}>
+            <Text style={styles.sectionTitle}>🛒 Despesas do Mês por Tipo</Text>
+            {monthlyStatement.expensesByType.map((expenseType) => (
+              <View key={expenseType.establishmentType} style={styles.expenseTypeCard}>
+                <TouchableOpacity
+                  style={styles.expenseTypeHeader}
+                  onPress={() => toggleExpand(expenseType.establishmentType)}
+                >
+                  <View style={styles.expenseTypeHeaderContent}>
+                    <Text style={styles.expenseTypeName}>
+                      {expandedTypes.has(expenseType.establishmentType) ? '▼' : '▶'}{' '}
+                      {expenseType.establishmentTypeName}
+                    </Text>
+                    <Text style={styles.expenseTypeAmount}>
+                      {formatCurrency(expenseType.totalSpent)}
+                    </Text>
+                  </View>
+                  <View style={styles.expenseTypeDetails}>
+                    <Text style={styles.expenseTypeLimit}>
+                      Limite: {expenseType.monthlyLimit !== null ? formatCurrency(expenseType.monthlyLimit) : 'Não definido'}
+                    </Text>
+                    {expenseType.availableBalance !== null && (
+                      <Text
+                        style={[
+                          styles.expenseTypeBalance,
+                          expenseType.availableBalance >= 0 ? styles.incomeText : styles.expenseText
+                        ]}
+                      >
+                        Saldo: {formatCurrency(expenseType.availableBalance)}
+                      </Text>
+                    )}
+                  </View>
+                  {expenseType.isOverLimit && expenseType.percentageUsed !== null && (
+                    <Text style={styles.expenseTypeOverLimit}>
+                      ⚠️ {expenseType.percentageUsed.toFixed(1)}% acima
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+                {expandedTypes.has(expenseType.establishmentType) && (
+                  <View style={styles.transactionsList}>
+                    {expenseType.transactions.map((transaction, index) => (
+                      <View key={index} style={styles.transactionCard}>
+                        <View style={styles.transactionHeader}>
+                          <Text style={styles.transactionDescription}>
+                            {transaction.description}
+                          </Text>
+                          <Text style={styles.transactionAmount}>
+                            {formatCurrency(transaction.amount)}
+                          </Text>
+                        </View>
+                        <View style={styles.transactionFooter}>
+                          <Text style={styles.transactionDate}>
+                            {formatDate(transaction.date)}
+                          </Text>
+                          <Text style={styles.transactionPayment}>
+                            {transaction.paymentTypeName}
+                          </Text>
+                        </View>
+                        {transaction.isCreditCardInstallment && transaction.installmentInfo && (
+                          <Text style={styles.transactionInstallment}>
+                            🔢 {transaction.installmentInfo}
+                          </Text>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Empty state */}
+        {monthlyEntries.length === 0 && (!monthlyStatement || monthlyStatement.expensesByType.length === 0) && (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Nenhum dado disponível para este período</Text>
+          </View>
+        )}
+      </View>
+    );
   };
 
   /**
@@ -438,26 +642,6 @@ export default function MonthlyStatementScreen() {
             <Text style={styles.navButtonText}>▶</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Abas */}
-        <View style={styles.tabsContainer}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'entries' && styles.tabActive]}
-            onPress={() => setActiveTab('entries')}
-          >
-            <Text style={[styles.tabText, activeTab === 'entries' && styles.tabTextActive]}>
-              Entradas Mensais
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'statement' && styles.tabActive]}
-            onPress={() => setActiveTab('statement')}
-          >
-            <Text style={[styles.tabText, activeTab === 'statement' && styles.tabTextActive]}>
-              Extrato de Despesas
-            </Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
       {/* Conteúdo */}
@@ -473,7 +657,7 @@ export default function MonthlyStatementScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          {activeTab === 'entries' ? renderMonthlyEntriesTab() : renderStatementTab()}
+          {renderUnifiedContent()}
         </ScrollView>
       )}
     </View>
@@ -815,5 +999,49 @@ const styles = StyleSheet.create({
     color: '#2196F3',
     fontWeight: '600',
     marginTop: 4,
+  },
+  // Novos estilos para o layout unificado
+  summaryCardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 8,
+  },
+  collapsibleSection: {
+    backgroundColor: '#FFF',
+    marginBottom: 12,
+    borderRadius: 8,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+  },
+  collapsibleTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
+  },
+  collapsibleAmount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  collapsibleContent: {
+    padding: 12,
+    paddingTop: 0,
   },
 });
