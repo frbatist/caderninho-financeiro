@@ -92,8 +92,32 @@ public enum EstablishmentType
     Health = 14,
 
     /// <summary>
-    /// Serviços de saúde
+    /// Transporte e mobilidade
+    /// </summary>
+    [Display(Name = "Transporte")]
+    Transport = 15,
+
+    /// <summary>
+    /// Serviços diversos
+    /// </summary>
+    [Display(Name = "Serviços")]
+    Services = 16,
+
+    /// <summary>
+    /// Cuidados pessoais
+    /// </summary>
+    [Display(Name = "Cuidados pessoais")]
+    PersonalCare = 17,
+
+    /// <summary>
+    /// Comércio eletrônico
+    /// </summary>
+    [Display(Name = "E-Commerce")]
+    ECommerce = 18,
+
+    /// <summary>
+    /// Outros tipos de estabelecimento
     /// </summary>
     [Display(Name = "Outros")]
-    Other = 15
+    Other = 19
 }

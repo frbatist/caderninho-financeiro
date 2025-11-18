@@ -17,7 +17,11 @@ export enum EstablishmentType {
   Entertainment = 12,
   Pharmacy = 13,
   Health = 14,
-  Other = 15
+  Transport = 15,
+  Services = 16,
+  PersonalCare = 17,
+  ECommerce = 18,
+  Other = 19
 }
 
 /**
@@ -39,6 +43,10 @@ export const establishmentTypeNames: Record<EstablishmentType, string> = {
   [EstablishmentType.Entertainment]: 'Lazer',
   [EstablishmentType.Pharmacy]: 'Farmácia',
   [EstablishmentType.Health]: 'Saúde',
+  [EstablishmentType.Transport]: 'Transporte',
+  [EstablishmentType.Services]: 'Serviços',
+  [EstablishmentType.PersonalCare]: 'Cuidados pessoais',
+  [EstablishmentType.ECommerce]: 'E-Commerce',
   [EstablishmentType.Other]: 'Outros'
 };
 
@@ -60,6 +68,10 @@ export const establishmentTypeIcons: Record<EstablishmentType, string> = {
   [EstablishmentType.Entertainment]: '🎬',
   [EstablishmentType.Pharmacy]: '💊',
   [EstablishmentType.Health]: '🏥',
+  [EstablishmentType.Transport]: '🚗',
+  [EstablishmentType.Services]: '🔧',
+  [EstablishmentType.PersonalCare]: '💆',
+  [EstablishmentType.ECommerce]: '🛍️',
   [EstablishmentType.Other]: '🏪'
 };
 
@@ -81,6 +93,10 @@ export const establishmentTypeColors: Record<EstablishmentType, string> = {
   [EstablishmentType.Entertainment]: '#FF5722',
   [EstablishmentType.Pharmacy]: '#2196F3',
   [EstablishmentType.Health]: '#F44336',
+  [EstablishmentType.Transport]: '#00BCD4',
+  [EstablishmentType.Services]: '#607D8B',
+  [EstablishmentType.PersonalCare]: '#9C27B0',
+  [EstablishmentType.ECommerce]: '#FF6B35',
   [EstablishmentType.Other]: '#757575'
 };
 
