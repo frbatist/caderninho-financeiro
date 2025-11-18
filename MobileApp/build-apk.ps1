@@ -246,6 +246,7 @@ if (-not $BuildOnly) {
     
     Write-Step "Iniciando container no Raspberry Pi..."
     
+    $piHost = $RaspberryPiHost
     $remoteScript = @"
 cd ~/caderninho-apk
 
@@ -273,7 +274,7 @@ docker ps | grep caderninho-apk
 
 echo ""
 echo "[OK] Deploy concluído!"
-echo "Acesse: http://$RaspberryPiHost:8080"
+echo "Acesse: http://$piHost:8080"
 "@
     
     $tempScript = New-TemporaryFile
