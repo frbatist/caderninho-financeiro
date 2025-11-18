@@ -130,4 +130,62 @@ public class EstablishmentsController : ControllerBase
             return StatusCode(500, "Erro interno do servidor");
         }
     }
+
+    /// <summary>
+    /// Atualiza um estabelecimento existente
+    /// </summary>
+    /// <param name="id">ID do estabelecimento a ser atualizado</param>
+    /// <param name="dto">Dados atualizados do estabelecimento</param>
+    /// <returns>Estabelecimento atualizado</returns>
+    [HttpPut("{id}")]
+    public async Task<ActionResult<Establishment>> Update(int id, [FromBody] UpdateEstablishmentDto dto)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var establishment = await _establishmentService.UpdateAsync(id, dto);
+
+            if (establishment == null)
+            {
+                return NotFound("Estabelecimento não encontrado");
+            }
+
+            return Ok(establishment);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao atualizar estabelecimento {EstablishmentId}", id);
+            return StatusCode(500, "Erro interno do servidor");
+        }
+    }
+
+    /// <summary>
+    /// Remove um estabelecimento
+    /// </summary>
+    /// <param name="id">ID do estabelecimento a ser removido</param>
+    /// <returns>Status da operação</returns>
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        try
+        {
+            var result = await _establishmentService.DeleteAsync(id);
+
+            if (!result)
+            {
+                return NotFound("Estabelecimento não encontrado");
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao remover estabelecimento {EstablishmentId}", id);
+            return StatusCode(500, "Erro interno do servidor");
+        }
+    }
 }
