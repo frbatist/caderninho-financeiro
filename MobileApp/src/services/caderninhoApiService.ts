@@ -141,6 +141,11 @@ export interface CreateEstablishmentDto {
   type: EstablishmentType;
 }
 
+export interface UpdateEstablishmentDto {
+  name: string;
+  type: EstablishmentType;
+}
+
 export interface CreateMonthlyEntryDto {
   type: MonthlyEntryType;
   description: string;
@@ -237,6 +242,10 @@ export interface MonthlySpendingLimitFilterRequest extends FilterRequest {
   isActive?: boolean;
 }
 
+export interface EstablishmentFilterRequest extends FilterRequest {
+  type?: EstablishmentType;
+}
+
 /**
  * Serviços para Usuários
  */
@@ -326,11 +335,12 @@ export class ExpensesService {
  * Serviços para Estabelecimentos
  */
 export class EstablishmentsService {
-  static async getAll(filter?: FilterRequest): Promise<PagedResponse<Establishment>> {
+  static async getAll(filter?: EstablishmentFilterRequest): Promise<PagedResponse<Establishment>> {
     const params: Record<string, any> = {};
     if (filter?.pageNumber) params.pageNumber = filter.pageNumber;
     if (filter?.pageSize) params.pageSize = filter.pageSize;
     if (filter?.searchText) params.searchText = filter.searchText;
+    if (filter?.type !== undefined) params.type = filter.type;
 
     const url = apiService.buildUrlWithParams(API_ENDPOINTS.ESTABLISHMENTS, params);
     return apiService.get<PagedResponse<Establishment>>(url);
@@ -342,6 +352,14 @@ export class EstablishmentsService {
 
   static async create(data: CreateEstablishmentDto): Promise<Establishment> {
     return apiService.post<Establishment>(API_ENDPOINTS.CREATE_ESTABLISHMENT, data);
+  }
+
+  static async update(id: number, data: UpdateEstablishmentDto): Promise<Establishment> {
+    return apiService.put<Establishment>(API_ENDPOINTS.UPDATE_ESTABLISHMENT(id), data);
+  }
+
+  static async delete(id: number): Promise<void> {
+    return apiService.delete<void>(API_ENDPOINTS.DELETE_ESTABLISHMENT(id));
   }
 }
 

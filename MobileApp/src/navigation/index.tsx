@@ -22,6 +22,8 @@ import MonthlySpendingLimitsScreen from '../screens/MonthlySpendingLimitsScreen'
 import AddMonthlySpendingLimitScreen from '../screens/AddMonthlySpendingLimitScreen';
 import MonthlyStatementScreen from '../screens/MonthlyStatementScreen';
 import CardsScreen from '../screens/CardsScreen';
+import ManageEstablishmentsScreen from '../screens/ManageEstablishmentsScreen';
+import AddEstablishmentScreen from '../screens/AddEstablishmentScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -131,6 +133,16 @@ export default function Navigation() {
           name="Cards" 
           component={CardsScreen}
           options={{ title: 'Cartões' }}
+        />
+        <Stack.Screen 
+          name="ManageEstablishments" 
+          component={ManageEstablishmentsScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="AddEstablishment" 
+          component={AddEstablishmentScreen}
+          options={{ headerShown: false }}
         />
         {/* Adicione mais telas aqui conforme desenvolver */}
       </Stack.Navigator>

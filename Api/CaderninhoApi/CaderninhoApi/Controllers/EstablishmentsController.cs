@@ -47,6 +47,12 @@ public class EstablishmentsController : ControllerBase
                 query = query.Where(e => e.Name.Contains(filter.SearchText));
             }
 
+            // Aplicar filtro por tipo se fornecido
+            if (filter.Type.HasValue)
+            {
+                query = query.Where(e => e.Type == filter.Type.Value);
+            }
+
             // Contar total de itens antes da paginação
             var totalItems = await query.CountAsync();
 

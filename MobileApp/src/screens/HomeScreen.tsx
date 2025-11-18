@@ -247,6 +247,11 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             icon="💳"
             onPress={() => navigation.navigate('Cards')}
           />
+          <MenuButton
+            title="Estabelecimentos"
+            icon="🏪"
+            onPress={() => navigation.navigate('ManageEstablishments')}
+          />
         </View>
 
         {/* Informação */}

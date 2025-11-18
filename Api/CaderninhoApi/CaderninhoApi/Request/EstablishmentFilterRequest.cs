@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using CaderninhoApi.Domain.Enums;
 
 namespace CaderninhoApi.Request;
 
@@ -24,4 +25,10 @@ public class EstablishmentFilterRequest
     /// </summary>
     [Display(Name = "Filtro de Texto")]
     public string? SearchText { get; set; }
+
+    /// <summary>
+    /// Tipo do estabelecimento para filtro
+    /// </summary>
+    [Display(Name = "Tipo")]
+    public EstablishmentType? Type { get; set; }
 }

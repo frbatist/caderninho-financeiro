@@ -21,6 +21,8 @@ export type RootStackParamList = {
   Accounts: undefined;
   Cards: undefined;
   Categories: undefined;
+  ManageEstablishments: undefined;
+  AddEstablishment: { onEstablishmentAdded: () => void };
 };
 
 declare global {

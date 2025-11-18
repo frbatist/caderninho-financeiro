@@ -38,6 +38,8 @@ export const API_ENDPOINTS = {
   ESTABLISHMENTS: '/establishments',
   ESTABLISHMENT_BY_ID: (id: number) => `/establishments/${id}`,
   CREATE_ESTABLISHMENT: '/establishments',
+  UPDATE_ESTABLISHMENT: (id: number) => `/establishments/${id}`,
+  DELETE_ESTABLISHMENT: (id: number) => `/establishments/${id}`,
   
   // Entradas Mensais (Monthly Entries)
   MONTHLY_ENTRIES: '/monthlyentries',
