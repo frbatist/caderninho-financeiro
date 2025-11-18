@@ -12,6 +12,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  ScrollView,
+  Modal,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -23,45 +25,34 @@ type ExpensesScreenProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Expenses'>;
 };
 
-// Opções para dropdown de ano (atual + 10 anos atrás)
-const generateYearOptions = () => {
-  const currentYear = new Date().getFullYear();
-  const years = [];
-  for (let i = 0; i <= 10; i++) {
-    years.push({
-      value: currentYear - i,
-      label: (currentYear - i).toString(),
-    });
-  }
-  return years;
-};
-
-// Opções para dropdown de mês
-const monthOptions = [
-  { value: 1, label: 'Janeiro' },
-  { value: 2, label: 'Fevereiro' },
-  { value: 3, label: 'Março' },
-  { value: 4, label: 'Abril' },
-  { value: 5, label: 'Maio' },
-  { value: 6, label: 'Junho' },
-  { value: 7, label: 'Julho' },
-  { value: 8, label: 'Agosto' },
-  { value: 9, label: 'Setembro' },
-  { value: 10, label: 'Outubro' },
-  { value: 11, label: 'Novembro' },
-  { value: 12, label: 'Dezembro' },
-];
-
 export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
   // Estados de filtro
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   
   // Estados de dados
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [totalExpenses, setTotalExpenses] = useState(0);
+
+  // Opções de anos (2 anos anteriores, atual, 2 anos posteriores)
+  const yearOptions = [
+    currentYear - 2,
+    currentYear - 1,
+    currentYear,
+    currentYear + 1,
+    currentYear + 2,
+  ];
+
+  // Nomes dos meses
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
 
   // Carregar despesas
   const loadExpenses = useCallback(async (showLoading = true) => {
@@ -144,36 +135,29 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
-  // Renderizar dropdown customizado
-  const renderDropdown = (
-    value: number,
-    options: { value: number; label: string }[],
-    onSelect: (value: number) => void,
-    label: string
-  ) => (
-    <View style={styles.dropdownContainer}>
-      <Text style={styles.dropdownLabel}>{label}</Text>
-      <View style={styles.dropdownOptions}>
-        {options.map((option) => (
-          <TouchableOpacity
-            key={option.value}
-            style={[
-              styles.dropdownOption,
-              value === option.value && styles.dropdownOptionSelected
-            ]}
-            onPress={() => onSelect(option.value)}
-          >
-            <Text style={[
-              styles.dropdownOptionText,
-              value === option.value && styles.dropdownOptionTextSelected
-            ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
+  /**
+   * Navega para o mês anterior
+   */
+  const goToPreviousMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedMonth(12);
+      setSelectedYear(selectedYear - 1);
+    } else {
+      setSelectedMonth(selectedMonth - 1);
+    }
+  };
+
+  /**
+   * Navega para o próximo mês
+   */
+  const goToNextMonth = () => {
+    if (selectedMonth === 12) {
+      setSelectedMonth(1);
+      setSelectedYear(selectedYear + 1);
+    } else {
+      setSelectedMonth(selectedMonth + 1);
+    }
+  };
 
   // Renderizar item de despesa
   const renderExpenseItem = ({ item }: { item: Expense }) => (
@@ -223,9 +207,9 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
       <Text style={styles.emptyIcon}>💳</Text>
       <Text style={styles.emptyTitle}>Nenhuma despesa encontrada</Text>
       <Text style={styles.emptySubtitle}>
-        Não há despesas para {monthOptions.find(m => m.value === selectedMonth)?.label} de {selectedYear}
+        Não há despesas para {monthNames[selectedMonth - 1]} de {selectedYear}
       </Text>
-      <TouchableOpacity style={styles.addButton} onPress={handleAddExpense}>
+      <TouchableOpacity style={styles.addButtonInline} onPress={handleAddExpense}>
         <Text style={styles.addButtonText}>+ Adicionar Primeira Despesa</Text>
       </TouchableOpacity>
     </View>
@@ -235,11 +219,47 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
     <View style={styles.container}>
       {/* Header com filtros */}
       <View style={styles.header}>
-        <Text style={styles.title}>Despesas</Text>
+        <Text style={styles.headerTitle}>Despesas</Text>
         
-        <View style={styles.filtersContainer}>
-          {renderDropdown(selectedYear, generateYearOptions(), setSelectedYear, 'Ano')}
-          {renderDropdown(selectedMonth, monthOptions, setSelectedMonth, 'Mês')}
+        {/* Seletor de Ano */}
+        <View style={styles.filterContainer}>
+          <Text style={styles.filterLabel}>Ano:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.yearScroll}>
+            {yearOptions.map((year) => (
+              <TouchableOpacity
+                key={year}
+                style={[
+                  styles.yearButton,
+                  selectedYear === year && styles.yearButtonActive
+                ]}
+                onPress={() => setSelectedYear(year)}
+              >
+                <Text
+                  style={[
+                    styles.yearButtonText,
+                    selectedYear === year && styles.yearButtonTextActive
+                  ]}
+                >
+                  {year}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Navegação de Meses */}
+        <View style={styles.monthNavigation}>
+          <TouchableOpacity style={styles.navButton} onPress={goToPreviousMonth}>
+            <Text style={styles.navButtonText}>◀</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.currentMonth}>
+            {monthNames[selectedMonth - 1]} {selectedYear}
+          </Text>
+          
+          <TouchableOpacity style={styles.navButton} onPress={goToNextMonth}>
+            <Text style={styles.navButtonText}>▶</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Resumo */}
@@ -258,7 +278,7 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
       {/* Lista de despesas */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#2196F3" />
           <Text style={styles.loadingText}>Carregando despesas...</Text>
         </View>
       ) : (
@@ -288,66 +308,92 @@ export default function ExpensesScreen({ navigation }: ExpensesScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f5f5f5',
   },
   header: {
     backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  title: {
-    fontSize: 28,
+  headerTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 20,
-  },
-  filtersContainer: {
-    flexDirection: 'row',
-    gap: 16,
     marginBottom: 16,
   },
-  dropdownContainer: {
-    flex: 1,
+  filterContainer: {
+    marginBottom: 12,
   },
-  dropdownLabel: {
+  filterLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#666',
     marginBottom: 8,
   },
-  dropdownOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  yearScroll: {
+    flexGrow: 0,
   },
-  dropdownOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+  yearButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
     borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
+    borderColor: '#e0e0e0',
   },
-  dropdownOptionSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+  yearButtonActive: {
+    backgroundColor: '#2196F3',
+    borderColor: '#2196F3',
   },
-  dropdownOptionText: {
-    fontSize: 12,
+  yearButtonText: {
+    fontSize: 14,
     color: '#666',
-    textAlign: 'center',
-  },
-  dropdownOptionTextSelected: {
-    color: '#fff',
     fontWeight: '600',
+  },
+  yearButtonTextActive: {
+    color: '#fff',
+  },
+  monthNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  navButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2196F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navButtonText: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  currentMonth: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
   },
   summaryContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
   },
   summaryText: {
     fontSize: 14,
@@ -356,7 +402,7 @@ const styles = StyleSheet.create({
   totalAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#f44336',
   },
   loadingContainer: {
     flex: 1,
@@ -460,8 +506,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
-  addButton: {
-    backgroundColor: '#007AFF',
+  addButtonInline: {
+    backgroundColor: '#2196F3',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
