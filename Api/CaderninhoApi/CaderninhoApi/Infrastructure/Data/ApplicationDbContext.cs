@@ -51,8 +51,11 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Aplicar configura��es do Fluent API
+        // Aplicar configurações do Fluent API
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        // Configurar collation case insensitive para SQLite em colunas de texto
+        ConfigureCaseInsensitiveCollation(modelBuilder);
 
         // Configurar filtro global para soft delete
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
@@ -64,8 +67,26 @@ public class ApplicationDbContext : DbContext
             }
         }
 
-        // Seed data para usu�rios
+        // Seed data para usuários
         SeedUsers(modelBuilder);
+    }
+
+    /// <summary>
+    /// Configura collation case insensitive para colunas de texto
+    /// </summary>
+    private void ConfigureCaseInsensitiveCollation(ModelBuilder modelBuilder)
+    {
+        // Para SQLite, configurar collation NOCASE em todas as propriedades string
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(string))
+                {
+                    property.SetCollation("NOCASE");
+                }
+            }
+        }
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
