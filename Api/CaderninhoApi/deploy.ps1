@@ -153,8 +153,33 @@ if (-not $SkipBuild) {
     }
     
     Write-Output "Construindo para ARM64 (Raspberry Pi 3 - 64-bit)..."
-    docker build `
+    Write-Output "Usando buildx com cross-compilation nativa do .NET..."
+    
+    # Garantir que buildx está disponível
+    $buildxVersion = docker buildx version 2>$null
+    if (-not $buildxVersion) {
+        Write-ErrorMsg "Docker buildx nao esta disponivel!"
+        exit 1
+    }
+    
+    # Verificar se builder existe
+    $builderExists = docker buildx ls 2>$null | Select-String "arm-builder"
+    
+    if (-not $builderExists) {
+        Write-Output "Criando builder multi-plataforma..."
+        docker buildx create --name arm-builder --use --platform linux/arm64
+        if ($LASTEXITCODE -ne 0) {
+            Write-ErrorMsg "Falha ao criar builder!"
+            exit 1
+        }
+    } else {
+        docker buildx use arm-builder
+    }
+    
+    # Build com buildx e carregar no docker local
+    docker buildx build `
         --platform linux/arm64 `
+        --load `
         -t $FullImageName `
         -f $DockerfilePath `
         .

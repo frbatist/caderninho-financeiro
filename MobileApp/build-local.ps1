@@ -212,6 +212,37 @@ Após instalar:
 "@ -ForegroundColor Yellow
 }
 
+# Incrementar versão no app.json
+Write-Step "Incrementando versão do app..."
+$appJsonPath = Join-Path $PSScriptRoot "app.json"
+if (Test-Path $appJsonPath) {
+    $appJson = Get-Content $appJsonPath -Raw | ConvertFrom-Json
+    
+    # Incrementar versionCode (Android)
+    $currentVersionCode = [int]$appJson.expo.android.versionCode
+    $newVersionCode = $currentVersionCode + 1
+    $appJson.expo.android.versionCode = $newVersionCode
+    
+    # Incrementar version (semântico)
+    $currentVersion = $appJson.expo.version
+    if ($currentVersion -match '^(\d+)\.(\d+)\.(\d+)$') {
+        $major = [int]$matches[1]
+        $minor = [int]$matches[2]
+        $patch = [int]$matches[3]
+        $newVersion = "$major.$minor.$($patch + 1)"
+        $appJson.expo.version = $newVersion
+        
+        Write-Host "Versão: $currentVersion -> $newVersion" -ForegroundColor Cyan
+        Write-Host "VersionCode: $currentVersionCode -> $newVersionCode" -ForegroundColor Cyan
+    }
+    
+    # Salvar app.json
+    $appJson | ConvertTo-Json -Depth 100 | Set-Content $appJsonPath -Encoding UTF8
+    Write-Success "Versão incrementada"
+} else {
+    Write-Host "[AVISO] app.json não encontrado, versão não foi incrementada" -ForegroundColor Yellow
+}
+
 # Verificar se a pasta android existe
 if (-not (Test-Path "android")) {
     Write-Host "`n==> Pasta android não encontrada. Gerando..." -ForegroundColor Cyan
